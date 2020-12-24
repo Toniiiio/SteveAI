@@ -1,0 +1,64 @@
+[1] TRUE
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.29/containers/json?all=1: dial unix /var/run/docker.sock: connect: permission denied
+"docker rm" requires at least 1 argument(s).
+See 'docker rm --help'.
+
+Usage:  docker rm [OPTIONS] CONTAINER [CONTAINER...]
+
+Remove one or more containers
+Registered S3 method overwritten by 'Rcpp':
+  method      from   
+  print.bytes openssl
+[sudo] password for rstudio: c7044cd5071c8601860326ef30b5c97cbd014832e5c8303de83bb7ddf3cf326e
+[1] "Connecting to remote server"
+$applicationCacheEnabled
+[1] TRUE
+
+$rotatable
+[1] FALSE
+
+$handlesAlerts
+[1] TRUE
+
+$databaseEnabled
+[1] TRUE
+
+$version
+[1] "45.0.2"
+
+$platform
+[1] "LINUX"
+
+$nativeEvents
+[1] FALSE
+
+$acceptSslCerts
+[1] TRUE
+
+$webdriver.remote.sessionid
+[1] "f58c70fa-9a65-4552-9a32-7037f621ca8a"
+
+$webStorageEnabled
+[1] TRUE
+
+$locationContextEnabled
+[1] TRUE
+
+$browserName
+[1] "firefox"
+
+$takesScreenshot
+[1] TRUE
+
+$javascriptEnabled
+[1] TRUE
+
+$cssSelectorsEnabled
+[1] TRUE
+
+$id
+[1] "f58c70fa-9a65-4552-9a32-7037f621ca8a"
+
+Error in eval(ei, envir) : object 's' not found
+Calls: source -> withVisible -> eval -> eval
+Execution halted

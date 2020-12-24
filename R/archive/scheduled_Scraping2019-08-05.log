@@ -1,0 +1,87 @@
+[1] TRUE
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.29/containers/json?all=1: dial unix /var/run/docker.sock: connect: permission denied
+"docker rm" requires at least 1 argument(s).
+See 'docker rm --help'.
+
+Usage:  docker rm [OPTIONS] CONTAINER [CONTAINER...]
+
+Remove one or more containers
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.29/containers/json?all=1: dial unix /var/run/docker.sock: connect: permission denied
+[sudo] password for rstudio: "docker rm" requires at least 1 argument(s).
+See 'docker rm --help'.
+
+Usage:  docker rm [OPTIONS] CONTAINER [CONTAINER...]
+
+Remove one or more containers
+Registered S3 method overwritten by 'Rcpp':
+  method      from   
+  print.bytes openssl
+[sudo] password for rstudio: 16e3c73309f8b73008fdd4c06ceeb163544a49753407d3381f19c9be8db6c775
+[1] "Connecting to remote server"
+$applicationCacheEnabled
+[1] TRUE
+
+$rotatable
+[1] FALSE
+
+$handlesAlerts
+[1] TRUE
+
+$databaseEnabled
+[1] TRUE
+
+$version
+[1] "45.0.2"
+
+$platform
+[1] "LINUX"
+
+$nativeEvents
+[1] FALSE
+
+$acceptSslCerts
+[1] TRUE
+
+$webdriver.remote.sessionid
+[1] "f49fc3b7-0145-4de3-8636-dd22be234d81"
+
+$webStorageEnabled
+[1] TRUE
+
+$locationContextEnabled
+[1] TRUE
+
+$browserName
+[1] "firefox"
+
+$takesScreenshot
+[1] TRUE
+
+$javascriptEnabled
+[1] TRUE
+
+$cssSelectorsEnabled
+[1] TRUE
+
+$id
+[1] "f49fc3b7-0145-4de3-8636-dd22be234d81"
+
+[1] "QIOPTIC"
+
+Selenium message:arguments[0].click is not a function
+Build info: version: '2.53.1', revision: 'a36b8b1', time: '2016-06-30 17:37:03'
+System info: host: '16e3c73309f8', ip: '172.17.0.2', os.name: 'Linux', os.arch: 'amd64', os.version: '4.15.0-1044-aws', java.version: '1.8.0_91'
+Driver info: driver.version: unknown
+
+[1] "nr: 2"
+<simpleError: 	 Summary: UnknownError
+ 	 Detail: An unknown server-side error occurred while processing the command.
+ 	 class: org.openqa.selenium.WebDriverException
+	 Further Details: run errorDetails method>
+Error in data.frame(name = name, duration = scrapeDuration) : 
+  object 'name' not found
+Calls: write.table -> is.data.frame -> data.frame
+In addition: Warning message:
+In write.table(paste0("Script started at: ", Sys.time()), logfileName,  :
+  appending column names to file
+Execution halted
