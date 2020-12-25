@@ -23,7 +23,7 @@
 
 # Error: log is empty in msg: 2020-05-27T19-35-36___13816___(shell)___ERROR___
 # Source: NULL element in glue
-# Solution: Remove that NULL element. and test for NULL: lapply(lapply(rvestScraper, "[[", "url"), is.null) %>% unlist %>% which.
+# Solution: Remove that NULL element. and test for NULL: lapply(lapply(SteveAI::rvestScraper, "[[", "url"), is.null) %>% unlist %>% which.
 
 # Error: Fehler: near ".1": column names with .1 not accepted in database
 # Source: sqlite database does not accept . in name. is created by duplicated columns
@@ -450,12 +450,12 @@ run <- function(){
 
   #length()
 
-  #:seq(rvestScraper)
+  #:seq(SteveAI::rvestScraper)
   for(get_nr in 1){
     print(get_nr)
 
-    target_name <- names(rvestScraper)[get_nr]
-    scraper = rvestScraper[[get_nr]]
+    target_name <- names(SteveAI::rvestScraper)[get_nr]
+    scraper = SteveAI::rvestScraper[[get_nr]]
     response <- tryCatchLog(
       expr = scraper$url %>% httr::GET(),
       error = function(e){
@@ -470,7 +470,7 @@ run <- function(){
       }
     )
 
-    file_Name <- glue("{names(rvestScraper)[get_nr]}_{Sys.Date()}.RData")
+    file_Name <- glue("{names(SteveAI::rvestScraper)[get_nr]}_{Sys.Date()}.RData")
     save(response, file = glue("{folder_name}/{file_Name}"))
   }
 
@@ -484,12 +484,12 @@ run <- function(){
 
   nr <- 1
 
-  for(nr in seq(rvestScraper)){
+  for(nr in seq(SteveAI::rvestScraper)){
 
     print(nr)
 
-    scraper <- rvestScraper[[nr]]
-    name <- names(rvestScraper)[nr]
+    scraper <- SteveAI::rvestScraper[[nr]]
+    name <- names(SteveAI::rvestScraper)[nr]
 
     file_Name <- which(name == nms) %>% names
 
@@ -507,8 +507,8 @@ run <- function(){
       expr = rvestScraping(response = response, scraper = scraper),
       error = function(e){
         print(e)
-        name <- names(rvestScraper)[nr]
-        url <- rvestScraper[[nr]]$url
+        name <- names(SteveAI::rvestScraper)[nr]
+        url <- SteveAI::rvestScraper[[nr]]$url
 
         msg <- glue::glue("Scrape for comp_name:'{name}' failed for url:'{url}'. The error reads: {e}.")
 
@@ -596,23 +596,23 @@ run <- function(){
 
 }
 
-### repair rvestScraper
-# for(nr in seq(rvestScraper)){
-#   nms <- names(rvestScraper[[nr]])
+### repair SteveAI::rvestScraper
+# for(nr in seq(SteveAI::rvestScraper)){
+#   nms <- names(SteveAI::rvestScraper[[nr]])
 #   idx <- nms == "XPath"
 #   if(sum(idx)){
 #     print(idx)
 #     nms[idx] <- "jobNameXpath"
-#     rvestScraper[[nr]] <- lapply(
-#       rvestScraper[[nr]],
+#     SteveAI::rvestScraper[[nr]] <- lapply(
+#       SteveAI::rvestScraper[[nr]],
 #       FUN = function(x){
 #         ifelse(test = typeof(x) == "closure", yes = x, no = as.character(x))
 #       }
 #     )
-#     names(rvestScraper[[nr]]) <- nms
+#     names(SteveAI::rvestScraper[[nr]]) <- nms
 #   }
 # }
-# save(rvestScraper, file = "scraper_rvest.RData")
+# save(SteveAI::rvestScraper, file = "scraper_rvest.RData")
 
 
 
