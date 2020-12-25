@@ -306,7 +306,7 @@ start <- Sys.time()
 # SteveAI_dir <- "/home/pi/sivis/scrape"
 SteveAI_dir <- "~"
 setwd(SteveAI_dir)
-load(file.path(SteveAI_dir, "scraper_rvest.RData"))
+# load(file.path(SteveAI_dir, "scraper_rvest.RData"))
 logger_name <- "sivis"
 
 if(!dir.exists("dataRvest")){
