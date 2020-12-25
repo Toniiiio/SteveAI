@@ -152,8 +152,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
     message("no new content to insert in data base. Updating time info if necessary Proceeeding,...")
 
   }
-
-  DBI::dbDisconnect(conn = conn)
+  dbDisconnect(conn = conn)
 
   ################ Time TABLE
 
@@ -315,6 +314,8 @@ if(!dir.exists("dataRvest")){
 
 }
 
+
+source("logging.R")
 flog.info(msg = "Logger successfully initialized from calling script.", logger= logger_name)
 
 # load("~/TMP/raspi/scraper.RData")
@@ -397,7 +398,20 @@ rvestScraping <- function(response, scraper){
   return(out)
 }
 
+print(Sys.time())
+data_raw <- list()
+nr <- 1
 
+
+durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{Sys.Date()}.csv")
+
+nr <- 60
+
+folder_name <- glue("response_raw/{Sys.Date()}")
+dir.create("response_raw")
+dir.create(folder_name)
+
+get_nr <- 1
 
 scrape_log_info <- function(target_name, url, msg, logger_name){
 
@@ -430,172 +444,150 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
 
 }
 
+get_nr <- 77
+#length()
 
-run <- function(){
+for(get_nr in seq(rvestScraper)){
+  print(get_nr)
 
-  print(Sys.time())
-  data_raw <- list()
-  nr <- 1
+  target_name <- names(rvestScraper)[get_nr]
+  scraper = rvestScraper[[get_nr]]
+  response <- tryCatchLog(
+    expr = scraper$url %>% httr::GET(),
+    error = function(e){
 
-
-  durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{Sys.Date()}.csv")
-
-  nr <- 60
-
-  folder_name <- glue("response_raw/{Sys.Date()}")
-  dir.create("response_raw")
-  dir.create(folder_name)
-
-  get_nr <- 1
-
-  #length()
-
-  #:seq(rvestScraper)
-  for(get_nr in 1){
-    print(get_nr)
-
-    target_name <- names(rvestScraper)[get_nr]
-    scraper = rvestScraper[[get_nr]]
-    response <- tryCatchLog(
-      expr = scraper$url %>% httr::GET(),
-      error = function(e){
-
-        scrape_log_error(
-          target_name = target_name,
-          msg = e,
-          url = scraper$url,
-          logger_name = logger_name
-        )
-
-      }
-    )
-
-    file_Name <- glue("{names(rvestScraper)[get_nr]}_{Sys.Date()}.RData")
-    save(response, file = glue("{folder_name}/{file_Name}"))
-  }
-
-  responses <- list.files(folder_name)
-  nms <- responses %>%
-    sapply(FUN = function(response){
-      strsplit(x = response, split = "_") %>% unlist %>% .[1]
-    })
-
-  if(!length(nms)) stop("Did not find any downloaded files.")
-
-  nr <- 1
-
-  for(nr in seq(rvestScraper)){
-
-    print(nr)
-
-    scraper <- rvestScraper[[nr]]
-    name <- names(rvestScraper)[nr]
-
-    file_Name <- which(name == nms) %>% names
-
-    if(!length(file_Name)){
-      warning("no such file with response.")
-      next
-    }
-
-    load(file.path(folder_name, file_Name))
-
-    start <- Sys.time()
-
-    print(name)
-    data_raw[[name]] <- tryCatchLog(
-      expr = rvestScraping(response = response, scraper = scraper),
-      error = function(e){
-        print(e)
-        name <- names(rvestScraper)[nr]
-        url <- rvestScraper[[nr]]$url
-
-        msg <- glue::glue("Scrape for comp_name:'{name}' failed for url:'{url}'. The error reads: {e}.")
-
-        scrape_log_error(
-          target_name = name,
-          msg = msg,
-          url = scraper$url,
-          logger_name = logger_name
-        )
-
-      }
-    )
-
-    if(is.null(data_raw[[name]]) | length(data_raw[[name]]) < 2) next
-    # data_raw
-
-    # has_Id <- FALSE #names(data_raw[[name]])
-
-
-
-    # if(has_Id){
-    #
-    # }else{
-    #
-    #   # build id - take all non-empty columns that do not have blacklist items
-    #   apply(data_raw, 2, nchar)
-    #
-    # }
-
-    end <- Sys.time()
-    scrapeDuration <- as.numeric(end - start)
-
-    # fileNameJobDesc = paste0("dataRvest/JobDescLinks_", name, "_", Sys.Date(), ".csv")
-    # write.csv2(x = data_raw[[name]], file = fileNameJobDesc, row.names = FALSE)
-
-
-    # write.table(
-    #   data.frame(
-    #     name = name,
-    #     duration = scrapeDuration
-    #   ),
-    #   file = durationFileName,
-    #   append = TRUE,
-    #   row.names = FALSE,
-    #   col.names = FALSE
-    # )
-
-    db_name <- "rvest_scraper.db"
-    target_table_job <- "RVEST_SINGLE_JOBS"
-    target_table_time <- "RVEST_SINGLE_TIME"
-    out = data_raw[[name]]
-
-    if(!is.null(out)){
-
-      write_To_DB(
-        db_name = db_name,
-        target_table_job = target_table_job,
-        target_table_time = target_table_time,
-        out = out,
-        target_name = name,
+      scrape_log_error(
+        target_name = target_name,
+        msg = e,
         url = scraper$url,
         logger_name = logger_name
       )
 
-    }else{
+    }
+  )
 
-      warning(glue("No new data to insert for company: {name}. Might be due to wrong xpath, check the logs from the requests."))
-      scrape_log_warn(
+  file_Name <- glue("{names(rvestScraper)[get_nr]}_{Sys.Date()}.RData")
+  save(response, file = glue("{folder_name}/{file_Name}"))
+}
+
+responses <- list.files(folder_name)
+nms <- responses %>%
+  sapply(FUN = function(response){
+    strsplit(x = response, split = "_") %>% unlist %>% .[1]
+  })
+
+if(!length(nms)) stop("Did not find any downloaded files.")
+
+nr <- 1
+
+for(nr in seq(rvestScraper)){
+
+  print(nr)
+
+  scraper <- rvestScraper[[nr]]
+  name <- names(rvestScraper)[nr]
+
+  file_Name <- which(name == nms) %>% names
+
+  if(!length(file_Name)){
+    warning("no such file with response.")
+    next
+  }
+
+  load(file.path(folder_name, file_Name))
+
+  start <- Sys.time()
+
+  print(name)
+  data_raw[[name]] <- tryCatchLog(
+    expr = rvestScraping(response = response, scraper = scraper),
+    error = function(e){
+      print(e)
+      name <- names(rvestScraper)[nr]
+      url <- rvestScraper[[nr]]$url
+
+      msg <- glue::glue("Scrape for comp_name:'{name}' failed for url:'{url}'. The error reads: {e}.")
+
+      scrape_log_error(
         target_name = name,
-        url = url,
-        msg = glue::glue("No new data to insert for company: {name}. Might be due to wrong xpath, check the logs from the requests."),
+        msg = msg,
+        url = scraper$url,
         logger_name = logger_name
       )
 
     }
+  )
+
+  if(is.null(data_raw[[name]]) | length(data_raw[[name]]) < 2) next
+  # data_raw
+
+  # has_Id <- FALSE #names(data_raw[[name]])
+
+
+
+  # if(has_Id){
+  #
+  # }else{
+  #
+  #   # build id - take all non-empty columns that do not have blacklist items
+  #   apply(data_raw, 2, nchar)
+  #
+  # }
+
+  end <- Sys.time()
+  scrapeDuration <- as.numeric(end - start)
+
+  # fileNameJobDesc = paste0("dataRvest/JobDescLinks_", name, "_", Sys.Date(), ".csv")
+  # write.csv2(x = data_raw[[name]], file = fileNameJobDesc, row.names = FALSE)
+
+
+  # write.table(
+  #   data.frame(
+  #     name = name,
+  #     duration = scrapeDuration
+  #   ),
+  #   file = durationFileName,
+  #   append = TRUE,
+  #   row.names = FALSE,
+  #   col.names = FALSE
+  # )
+
+  db_name <- "rvest_scraper.db"
+  target_table_job <- "RVEST_SINGLE_JOBS"
+  target_table_time <- "RVEST_SINGLE_TIME"
+  out = data_raw[[name]]
+
+  if(!is.null(out)){
+
+    write_To_DB(
+      db_name = db_name,
+      target_table_job = target_table_job,
+      target_table_time = target_table_time,
+      out = out,
+      target_name = name,
+      url = scraper$url,
+      logger_name = logger_name
+    )
+
+  }else{
+
+    warning(glue("No new data to insert for company: {name}. Might be due to wrong xpath, check the logs from the requests."))
+    scrape_log_warn(
+      target_name = name,
+      url = url,
+      msg = glue::glue("No new data to insert for company: {name}. Might be due to wrong xpath, check the logs from the requests."),
+      logger_name = logger_name
+    )
 
   }
 
-
-
-
-  end <- Sys.time()
-  end - start
-
-
 }
 
+
+
+
+end <- Sys.time()
+end - start
 ### repair rvestScraper
 # for(nr in seq(rvestScraper)){
 #   nms <- names(rvestScraper[[nr]])

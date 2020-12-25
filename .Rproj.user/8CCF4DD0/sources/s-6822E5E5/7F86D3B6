@@ -1,0 +1,24 @@
+{
+    "id": "7F86D3B6",
+    "path": "~/SteveAI/R/logging.R",
+    "project_path": "R/logging.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1608899524307.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "173,15",
+        "scrollLine": "163"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1608899535,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1608899535461,
+    "read_only": false,
+    "read_only_alternatives": []
+}

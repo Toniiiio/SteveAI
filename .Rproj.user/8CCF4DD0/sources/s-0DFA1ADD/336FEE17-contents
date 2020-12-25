@@ -1,4 +1,12 @@
 #source("logging.R")
+scrape_Dir <- "~"
+#source(file.path(scrape_Dir, "rvestFunctions.R"))
+setwd(scrape_Dir)
+load(file.path(scrape_Dir, "scraperRvestMultiPage.RData"))
+folder_name <- glue("response_raw/{Sys.Date()}")
+dir.create("response_raw")
+dir.create("dataMultiRvest")
+dir.create(folder_name)
 
 which01 <- function(x, arr.ind = FALSE, useNames = TRUE, one = TRUE){
   if(one) x <- !x
@@ -6,6 +14,10 @@ which01 <- function(x, arr.ind = FALSE, useNames = TRUE, one = TRUE){
 }
 
 
+nr <- 1
+
+name <- "VNG"
+name <- names(scraperRvestMultiPage)[50]
 
 scrapeRvestMPage <- function(name){
 
@@ -141,7 +153,6 @@ scrapeRvestMPage <- function(name){
       target_table_job = target_table_job,
       target_table_time = target_table_time,
       conn = conn,
-      url = url,
       out = dplyr::bind_rows(output)
     )
 
@@ -225,64 +236,51 @@ scrapeRvestMPage <- function(name){
 }
 
 
-run_multi <- function(){
 
-  scrape_Dir <- "~"
-  #source(file.path(scrape_Dir, "rvestFunctions.R"))
-  setwd(scrape_Dir)
-  load(file.path(scrape_Dir, "scraperRvestMultiPage.RData"))
-  folder_name <- glue("response_raw/{Sys.Date()}")
-  dir.create("response_raw")
-  dir.create("dataMultiRvest")
-  dir.create(folder_name)
+print(nr)
+scraper <- scraperRvestMultiPage[[name]]
 
-  nr <- 1
-  name <- "VNG"
-  name <- names(scraperRvestMultiPage)[50]
-
-  print(nr)
-  scraper <- scraperRvestMultiPage[[name]]
-
-  nr <- 1
+nr <- 1
 
 
-  out <- list()
-  scraperNr <- 15
-  durationFileName <- file.path(scrape_Dir, paste0("scrapeDuration_", Sys.Date(), ".csv"))
+out <- list()
+scraperNr <- 15
+durationFileName <- file.path(scrape_Dir, paste0("scrapeDuration_", Sys.Date(), ".csv"))
 
-  names(scraperRvestMultiPage)
-  for(scraperNr in 1:length(scraperRvestMultiPage)){ #1:
-    # if(scraperNr %in% c(1, 2, 3, 4, 35)) next
+names(scraperRvestMultiPage)
+for(scraperNr in 1:length(scraperRvestMultiPage)){ #1:
+  # if(scraperNr %in% c(1, 2, 3, 4, 35)) next
 
-    start <- Sys.time()
-    print(paste0("scraperNr: ", scraperNr))
-    name <- names(scraperRvestMultiPage)[scraperNr]
-    print(name)
-    out[[name]] <- tryCatchLog(
-      expr = scrapeRvestMPage(name = name),
-      error = function(e){
-        print(e)
-        # flog.error(msg = e, logger = logger_name)
-      }
-    )
-    end <- Sys.time()
-    scrapeDuration <- as.numeric(end - start)
+  start <- Sys.time()
+  print(paste0("scraperNr: ", scraperNr))
+  name <- names(scraperRvestMultiPage)[scraperNr]
+  print(name)
+  out[[name]] <- tryCatchLog(
+    expr = scrapeRvestMPage(name = name),
+    error = function(e){
+      print(e)
+      # flog.error(msg = e, logger = logger_name)
+    }
+  )
+  end <- Sys.time()
+  scrapeDuration <- as.numeric(end - start)
 
-    # write.table(
-    #   data.frame(
-    #     name = name,
-    #     duration = scrapeDuration
-    #   ),
-    #   file = durationFileName,
-    #   append = TRUE,
-    #   col.names = FALSE,
-    #   row.names = FALSE
-    # )
-
-  }
-
+  # write.table(
+  #   data.frame(
+  #     name = name,
+  #     duration = scrapeDuration
+  #   ),
+  #   file = durationFileName,
+  #   append = TRUE,
+  #   col.names = FALSE,
+  #   row.names = FALSE
+  # )
 
 }
 
 
 
+
+
+remove.packages("imageclipr")
+#devtools::install_github("xiaoa6435/imageclipr")
