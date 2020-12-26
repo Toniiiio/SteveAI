@@ -133,7 +133,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
     )
 
     scrape_log_info(
-      target_name = name,
+      target_name = target_name,
       url = url,
       msg = glue("{n_jobs} new jobs were inserted in job_id data base."),
       logger_name = logger_name
@@ -143,7 +143,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
   }else{
 
     scrape_log_info(
-      target_name = name,
+      target_name = target_name,
       url = url,
       msg = glue("no new content to insert in data base. Updating time info if necessary Proceeeding,..."),
       logger_name = logger_name
@@ -187,7 +187,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       statem <- glue("ALTER TABLE {target_table_time} ADD COLUMN '{date_Int}' INTEGER DEFAULT 0")
       sapply(statem, dbExecute, conn = conn)
       scrape_log_info(
-        target_name = name,
+        target_name = target_name,
         url = url,
         msg = glue("In time database date column: {date_Int} is added."),
         logger_name = logger_name
@@ -209,7 +209,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
     if(length(new_jobs_name)){
 
       scrape_log_info(
-        target_name = name,
+        target_name = target_name,
         url = url,
         msg = glue("Found {n_jobs} new jobs for the given day: {Sys.Date()} that are not in the time database. Add rows for that with value of 0 for the
                    past, since they didnt exist back then. This value has to be equal to the amount of new jobs in the id data table.."),
@@ -228,7 +228,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
       all_jobdata_till_today <- fetch_time
       scrape_log_warn(
-        target_name = name,
+        target_name = target_name,
         url = url,
         msg = glue("0 new job titles for the time database for the given day: {Sys.Date()}."),
         logger_name = logger_name
@@ -259,7 +259,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       {sum(.) - length(.)}
 
     scrape_log_info(
-      target_name = name,
+      target_name = target_name,
       url = url,
       msg = glue("{length(idx_to_Change)} new jobs were updated in multi_time data base. {amt_duplicate_positions} of it are duplicates."),
       logger_name = logger_name
@@ -270,7 +270,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
     to_db <- today_jobs_time
     scrape_log_info(
-      target_name = name,
+      target_name = target_name,
       url = url,
       msg = glue("Time table did not exist yet. Creating it. Morevoer, {dim(today_jobs_time)[1]} job titles are inserted in the job_id data base."),
       logger_name = logger_name
