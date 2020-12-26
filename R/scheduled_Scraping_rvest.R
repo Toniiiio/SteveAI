@@ -323,7 +323,7 @@ flog.info(msg = "Logger successfully initialized from calling script.", logger= 
 # library(magrittr)
 
 
-rvestScraping <- function(response, scraper){
+rvestScraping <- function(response, name, scraper){
 
   # check direct is its xml?
   if(is.character(response)){
@@ -504,7 +504,7 @@ run <- function(){
 
     print(name)
     data_raw[[name]] <- tryCatchLog(
-      expr = rvestScraping(response = response, scraper = scraper),
+      expr = rvestScraping(response = response, scraper = scraper, name = name),
       error = function(e){
         print(e)
         name <- names(SteveAI::rvestScraper)[nr]
