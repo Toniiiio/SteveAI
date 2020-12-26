@@ -451,7 +451,7 @@ run <- function(){
   #length()
 
   #
-  for(get_nr in 1:seq(SteveAI::rvestScraper)){
+  for(get_nr in seq(SteveAI::rvestScraper)){
     print(get_nr)
 
     target_name <- names(SteveAI::rvestScraper)[get_nr]
