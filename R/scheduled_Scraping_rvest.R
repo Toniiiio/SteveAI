@@ -358,8 +358,11 @@ rvestScraping <- function(response, name, scraper){
 
   }
 
-  content <- response %>% httr::content(type = "text", encoding = encoding)
-  content_len <- content %>% nchar
+  content <- response %>%
+    httr::content(type = "text", encoding = encoding)
+
+  content_len <- content %>%
+    nchar
 
   nodes <- content %>%
     xml2::read_html() %>%
