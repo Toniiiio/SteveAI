@@ -289,9 +289,9 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
   dbDisconnect(conn = conn)
 
 
-# fetch$`18392` <- NULL
-# to_db <- fetch
-# fetch$`2020-05-10` <- "18392"
+  # fetch$`18392` <- NULL
+  # to_db <- fetch
+  # fetch$`2020-05-10` <- "18392"
 
 }
 
@@ -440,12 +440,7 @@ run <- function(){
 
   print(Sys.time())
   data_raw <- list()
-  nr <- 1
-
-
   durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{Sys.Date()}.csv")
-
-  nr <- 60
 
   folder_name <- glue("response_raw/{Sys.Date()}")
   dir.create("response_raw")
@@ -487,7 +482,6 @@ run <- function(){
 
   if(!length(nms)) stop("Did not find any downloaded files.")
 
-  nr <- 1
 
   for(nr in seq(SteveAI::rvestScraper)){
 
