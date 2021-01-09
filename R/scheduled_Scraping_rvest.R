@@ -315,7 +315,9 @@ if(!dir.exists("dataRvest")){
 
 }
 
-flog.info(msg = "Logger successfully initialized from calling script.", logger= logger_name)
+file_path <- file.path(getwd(), paste0("rvest_single_", Sys.Date(), ".log"))
+
+flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), logger= logger_name)
 
 # load("~/TMP/raspi/scraper.RData")
 # scrapers <- scraper

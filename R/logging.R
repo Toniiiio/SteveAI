@@ -13,10 +13,12 @@ flog.logger(
 
 log_path <- "~"
 UC_Name <- "rvest_single"
+file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
 flog.appender(
   name = logger_name,
-  appender.file(file = glue("{log_path}/{UC_Name}_{Sys.Date()}.log") %>% toString)
+  appender.file(file = file_name)
 )
+file.create(file_name)
 
 # Setze Logging-Funktionen f?r tryCatchLog
 set.logging.functions(
@@ -201,3 +203,6 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
   flog.error(msg = msg, name = logger_name)
 
 }
+
+
+#flog.info(msg = "Logger successfully initialized within function definition.", logger= logger_name)
