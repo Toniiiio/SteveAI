@@ -1,21 +1,26 @@
-load("xpath_href.RData")
-#SteveAI::rvestScraper$xpath_href <- xpath_href
+# Doku:
+# In rvestScraping i save the links.
+# I want to have single purpose functions.
+# Therefore, i would separate this process.
+# I dont necessarily need an update every day.
+# Therefore, i would look in the database of
+# all jobs and see if i have a scraped link.
+# But not all jobs have a scraping path available.
+# So check the database for all entries with
+# a scraping path but no scraped job description.
 
-nr <- 1
-comp <- SteveAI::rvestScraper[[nr]]
-doc <- comp$url %>% read_html()
-links <- doc %>%
-  html_nodes(xpath = xpath_href[nr]) %>%
-  html_attr(name = "href")
-
-xxx <- lapply(links, htm2txt::gettxt)
+# load("xpath_href.RData")
 
 
-
-# text1 <- xxx[[1]]
-# text2 <- xxx[[2]]
+# # text1 <- xxx[[1]]
+# # text2 <- xxx[[2]]
+#
 
 findEnd <- function(text1, text2, reverse = FALSE){
+
+  if(text1 == text2){
+    warning("text1 equals text2")
+  }
 
   if(reverse){
     text1 <- text1 %>%
@@ -37,14 +42,17 @@ findEnd <- function(text1, text2, reverse = FALSE){
   same <- TRUE
   nr <- 1
 
-  while(same){
+  while(same & nr <= length(seq)){
     dist <- adist(substr(text1, 1, seq[nr]), substr(text2, 1, seq[nr])) / seq[nr]
     same <- dist[1, 1] == 0
     print(same)
     nr <- nr + 1
   }
 
-  if(nr == 2) return(0)
+  if(nr == 2 | (nr + 1) == length(seq)){
+    warning("no match found - maybe they start or end with same text.")
+    return(0)
+  }
 
 
   pos <- seq[nr]
@@ -59,53 +67,67 @@ findEnd <- function(text1, text2, reverse = FALSE){
 
   return(pos)
 }
+#
+#
+# xx <- findEnd(text1, text2, reverse = TRUE)
+#
+# cut1 <- substring(text1, 1, pos)
+# cut2 <- substring(text1, xx[1], nchar(text1))
+#
+# text_raw <- xxx[[25]]
+#
 
+remove_header_footer <- function(text_raw, cut, dist = 0.3, header = TRUE){
 
-xx <- findEnd(text1, text2, reverse = TRUE)
+  if(!nchar(cut)){
+    return(text_raw)
+  }
 
-cut1 <- substring(text1, 1, pos)
-cut2 <- substring(text1, xx[1], nchar(text1))
-
-text_raw <- xxx[[25]]
-
-extract_article <- function(text_raw, cut1, cut2){
-
-  str_len <- nchar(cut1)
+  str_len <- nchar(cut)
   s <- 1000
-  if(str_len > s) cut1 <- substring(cut1, 1, s)
-  m <- aregexec(cut1, text_raw, max.distance = 0.3)
-  replace1 <- substring(text_raw, first = m[[1]][1], last = str_len) %>%
-    unlist %>%
-    .[1]
-
-  str_len <- nchar(cut2)
-  s <- 1000
-  if(str_len > s) cut2 <- substring(cut2, 1, s)
-  m <- aregexec(cut2, text_raw, max.distance = 0.3)
+  if(str_len > s) cut <- substring(cut, 1, s)
+  m <- aregexec(cut, text_raw, max.distance = dist, fixed = TRUE)
 
   if(m[[1]][1] == -1){
+    warning(paste0("No match for ", cut))
+    xx
+    return(text_raw)
+  }
 
-    warning("No match!")
-    replace <- NULL
-    asd
+  if(header){
+
+    replace <- substring(text_raw, first = m[[1]][1], last = m[[1]][1] + str_len) %>%
+      unlist %>%
+      .[1]
 
   }else{
 
-    replace2 <- substring(text_raw, first = m[[1]][1], last = m[[1]][1] + str_len) %>%
+    replace <- substring(text_raw, first = m[[1]][1], last = str_len) %>%
       unlist %>%
       .[1]
 
   }
 
-  text_raw %>%
-    gsub(pattern = replace1, replacement = "", fixed = TRUE) %>%
-    gsub(pattern = replace2, replacement = "", fixed = TRUE)
+  out <- text_raw %>%
+    gsub(pattern = replace, replacement = "", fixed = TRUE)
+
+  return(out)
 
 }
 
-s <- lapply(xxx, extract_article, cut1 = cut1, cut2 = cut2)
-names(s) <- links
+extract_article <- function(text_raw, cut1, cut2){
 
-cat(s[[3]])
-cat(s[[25]])
+  if(text_raw[[1]] == "ERROR") return(text_raw[[1]])
+  text_raw <- remove_header_footer(text_raw, cut1) # remove header
+  text_raw <- remove_header_footer(text_raw, cut2) # remove footer
+  return(text_raw)
 
+}
+
+#
+# s <- lapply(xxx, extract_article, cut1 = cut1, cut2 = cut2)
+# names(s) <- links
+#
+# cat(s[[3]])
+# cat(s[[25]])
+#

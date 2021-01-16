@@ -52,7 +52,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
     which01() %>%
     out[, .]
 
-  job_id <- with_data[names(with_data) != "date"] %>%
+  job_id <- with_data[not(names(with_data) %in% c("links", "date"))] %>%
     apply(MARGIN = 1, FUN = paste, collapse = "__")
 
   out <- cbind(job_id, with_data)
@@ -175,8 +175,8 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
     fetch_time <- DBI::dbGetQuery(
       conn = conn,
-      statement = paste0("SELECT * FROM ", target_table_time),
-      row.names = TRUE
+      statement = paste0("SELECT * FROM ", target_table_time)
+      # row.names = TRUE
     )
 
     date_Col_Exists <- toString(as.numeric(Sys.Date())) %in% colnames(fetch_time)
@@ -377,6 +377,19 @@ rvestScraping <- function(response, name, scraper){
     x = nodes %>% rvest::html_text()
   )
 
+  if(is.na(scraper$href)){
+
+    links <- NA
+
+  }else{
+
+    links <- content %>%
+      xml2::read_html() %>%
+      html_nodes(xpath = scraper$href) %>%
+      html_attr(name = "href")
+
+  }
+
   # rvestLink <- getRvestHref(
   #   url = url,
   #   XPath = XPath
@@ -387,6 +400,7 @@ rvestScraping <- function(response, name, scraper){
     out <- data.frame(
       # x = rvestLink,
       jobName = rvestOut,
+      links = links,
       comp = name,
       date = Sys.Date(),
       location = "",
@@ -482,7 +496,7 @@ run <- function(){
 
   if(!length(nms)) stop("Did not find any downloaded files.")
 
-
+  nr <- 1
   for(nr in seq(SteveAI::rvestScraper)){
 
     print(nr)
@@ -497,6 +511,7 @@ run <- function(){
       next
     }
 
+    # loading variable: response here
     load(file.path(folder_name, file_Name))
 
     start <- Sys.time()
