@@ -99,7 +99,7 @@ all_job_descs <- vector("list", length(all_comps))
 
 #seq(all_comps)
 # 10 -> error, 15
-for(comp_nr in 18:29){
+for(comp_nr in 10:29){
 
   comp_name <- all_comps[comp_nr]
   print(comp_name)
