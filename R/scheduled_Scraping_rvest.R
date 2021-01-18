@@ -1,3 +1,11 @@
+library(tryCatchLog)
+library(rvest)
+library(glue)
+library(futile.logger)
+library(magrittr)
+library(DBI)
+# source("SteveAI/R/logging.R")
+
 ### Doku: Database management
 
 # I will have to add
@@ -34,6 +42,9 @@
 # even if error handling is properly wrapped in try catch log. if the error handling scrape_log_error(.)
 # has error in it.
 # Solution: Fix it.
+
+#library(rvest)
+#library(magrittr)
 
 which01 <- function(x, arr.ind = FALSE, useNames = TRUE, one = TRUE){
   if(one) x <- !x
@@ -155,6 +166,10 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   DBI::dbDisconnect(conn = conn)
 
+
+
+
+
   ################ Time TABLE
 
   date_Today <- Sys.Date() %>%
@@ -175,8 +190,8 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
     fetch_time <- DBI::dbGetQuery(
       conn = conn,
-      statement = paste0("SELECT * FROM ", target_table_time)
-      # row.names = TRUE
+      statement = paste0("SELECT * FROM ", target_table_time),
+      row.names = TRUE
     )
 
     date_Col_Exists <- toString(as.numeric(Sys.Date())) %in% colnames(fetch_time)
@@ -196,8 +211,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       # have to update fetch_time variable since it does not contain new column, yet.
       fetch_time <- DBI::dbGetQuery(
         conn = conn,
-        statement = paste0("SELECT * FROM ", target_table_time),
-        row.names = TRUE
+        statement = paste0("SELECT * FROM ", target_table_time)
       )
 
     }
@@ -251,7 +265,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       name = target_table_time,
       value = all_jobdata,
       overwrite = TRUE,
-      row.names= TRUE
+      row.names = TRUE
     )
 
     amt_duplicate_positions <- today_jobs_time[[1]] %>%
@@ -281,7 +295,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       name = target_table_time,
       value = to_db,
       overwrite = TRUE,
-      row.names= TRUE
+      row.names = TRUE
     )
 
   }
@@ -460,11 +474,11 @@ run <- function(){
   dir.create("response_raw")
   dir.create(folder_name)
 
-  get_nr <- 1
+  get_nr <- 2
 
   #length()
 
-  #
+
   for(get_nr in seq(SteveAI::rvestScraper)){
     print(get_nr)
 
@@ -574,6 +588,7 @@ run <- function(){
     target_table_job <- "RVEST_SINGLE_JOBS"
     target_table_time <- "RVEST_SINGLE_TIME"
     out = data_raw[[name]]
+    url = scraper$url
 
     if(!is.null(out)){
 
@@ -583,7 +598,7 @@ run <- function(){
         target_table_time = target_table_time,
         out = out,
         target_name = name,
-        url = scraper$url,
+        url = url,
         logger_name = logger_name
       )
 

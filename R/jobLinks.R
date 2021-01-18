@@ -45,7 +45,6 @@ findEnd <- function(text1, text2, reverse = FALSE){
   while(same & nr <= length(seq)){
     dist <- adist(substr(text1, 1, seq[nr]), substr(text2, 1, seq[nr])) / seq[nr]
     same <- dist[1, 1] == 0
-    print(same)
     nr <- nr + 1
   }
 
@@ -57,8 +56,9 @@ findEnd <- function(text1, text2, reverse = FALSE){
 
   pos <- seq[nr]
   while(!same){
-    print(pos)
-    dist <- adist(substr(text1, 1, pos), substr(text2, 1, pos)) / pos
+    # low performance (speed) if adist for long strings
+    lower_bound <- max(1, pos - 100)
+    dist <- adist(substr(text1, lower_bound, pos), substr(text2, lower_bound, pos))
     same <- dist[1, 1] == 0
     pos <- pos - 1
   }
@@ -119,7 +119,18 @@ extract_article <- function(text_raw, cut1, cut2){
 
   if(text_raw[[1]] == "ERROR") return(text_raw[[1]])
   text_raw <- remove_header_footer(text_raw, cut1) # remove header
+  # todo: why does this works: wouldnt it require header = FALSE?
   text_raw <- remove_header_footer(text_raw, cut2) # remove footer
+
+  has_add_jobs <- grepl(pattern = "WEITERE JOBANZEIGEN", x = text_raw)
+  if(has_add_jobs){
+    text_raw <- remove_header_footer(
+      text_raw = text_raw,
+      cut = "WEITERE JOBANZEIGEN",
+      header = FALSE
+    )
+  }
+
   return(text_raw)
 
 }
