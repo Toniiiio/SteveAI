@@ -27,6 +27,48 @@ getHTML <- function(getURL, targetString){
   )
 }
 
+getXPathByText <- function(text, doc, exact = FALSE, attr = NULL, byIndex = FALSE, onlyTags = FALSE){
+
+  if(is.character(doc)){
+
+    warning("doc is of type character - trying to convert to xml doc with xml2::read_html")
+    doc %<>% xml2::read_html()
+
+  }
+
+  text %<>% tolower %>% gsub(pattern = " ", replacement = "")
+  xpath <- paste0("//*[text()[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ', 'abcdefghijklmnopqrstuvwxyz'), '", text, "')]]")
+  tag <- doc %>% html_nodes(xpath = xpath)
+
+  tagName <- ""
+  tags <- c()
+
+  if(length(tag) > 1){
+    tagNames <- sapply(tag, html_name)
+    match <- which(tagNames != "script")
+    if(!length(match)) match <- 1
+    tag <- tag[match[1]]
+  }else if(length(tag) == 0){
+    message(glue("Did not find an xpath element that matches target Text: {text}!"))
+    return(NULL)
+  }
+
+  while(tagName != "html"){
+    tagName <- tag %>% html_name
+    tags <- c(tags, tagName)
+    tag <- tag %>% html_nodes(xpath = "..")
+  }
+
+  if(onlyTags){
+    return(tags %>% unique)
+  }
+
+  xpath <- paste(c("", tags[length(tags):1]), collapse = "/")
+  xpath
+
+}
+
+
 scrapeGetHtml <- function(getUrl, res){
   htmlDoc <- getURL %>% GET %>% content
   subsetBy <- names(res$xpath)

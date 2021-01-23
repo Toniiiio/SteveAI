@@ -1,10 +1,11 @@
-library(tryCatchLog)
-library(rvest)
-library(glue)
-library(futile.logger)
-library(magrittr)
-library(DBI)
+# library(tryCatchLog)
+# library(rvest)
+# library(glue)
+# library(futile.logger)
+# library(magrittr)
+# library(DBI)
 # source("SteveAI/R/logging.R")
+# source("R/logging.R")
 
 ### Doku: Database management
 
@@ -211,7 +212,8 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       # have to update fetch_time variable since it does not contain new column, yet.
       fetch_time <- DBI::dbGetQuery(
         conn = conn,
-        statement = paste0("SELECT * FROM ", target_table_time)
+        statement = paste0("SELECT * FROM ", target_table_time),
+        row.names = TRUE
       )
 
     }
