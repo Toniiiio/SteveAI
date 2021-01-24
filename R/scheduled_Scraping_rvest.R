@@ -52,6 +52,146 @@ which01 <- function(x, arr.ind = FALSE, useNames = TRUE, one = TRUE){
   which(x = !x, arr.ind = FALSE, useNames = TRUE)
 }
 
+update_tbl <- function(conn, target_table_job, data_to_store) {
+  fetch_jobid <- DBI::dbGetQuery(
+    conn = conn,
+    statement = paste0("SELECT * FROM ", target_table_job)
+  )
+
+  new_jobs <- data_to_store[!(data_to_store$job_id %in% fetch_jobid$job_id), ]
+
+  # could also append = TRUE new_jobs. But new_jobs will not always have all required columns - not sure what the impacts
+  # of always overwriting the data is.
+  to_upload <- dplyr::bind_rows(
+    dplyr::mutate_all(fetch_jobid, as.character),
+    dplyr::mutate_all(new_jobs, as.character)
+  )
+
+  missing_cols <- names(new_jobs)[!(names(new_jobs) %in% names(fetch_jobid))]
+
+  # Fehler: near ".1": syntax error --> error handling
+  dupl_col <- new_jobs %>%
+    names %>%
+    grepl(pattern = "[.]") %>%
+    which
+
+  dupl_col
+  if(length(dupl_col)){
+
+    warning(glue("duplicate columns with name: {names(new_jobs)[dupl_col]} is/are removed."))
+    new_jobs[[dupl_col]] <- NULL
+    missing_cols <- names(new_jobs)[!(names(new_jobs) %in% names(fetch_jobid))]
+
+  }
+
+  statem <- glue("ALTER TABLE {target_table_job} ADD COLUMN {missing_cols} TEXT")
+
+  sapply(statem, dbExecute, conn = conn)
+
+  return(
+    list(
+      to_upload = to_upload,
+      new_jobs = new_jobs
+    )
+  )
+}
+
+
+update_time_table <- function(conn, target_table_time, target_name, url, logger_name, today_jobs_time, date_today) {
+  fetch_time <- DBI::dbGetQuery(
+    conn = conn,
+    statement = paste0("SELECT * FROM ", target_table_time),
+    row.names = TRUE
+  )
+
+  date_Col_Exists <- toString(as.numeric(Sys.Date())) %in% colnames(fetch_time)
+  date_Col_Exists
+  if(!date_Col_Exists){
+
+    date_Int <- toString(as.numeric(Sys.Date()))
+    statem <- glue("ALTER TABLE {target_table_time} ADD COLUMN '{date_Int}' INTEGER DEFAULT 0")
+    sapply(statem, dbExecute, conn = conn)
+    scrape_log_info(
+      target_name = target_name,
+      url = url,
+      msg = glue("In time database date column: {date_Int} is added."),
+      logger_name = logger_name
+    )
+
+    # have to update fetch_time variable since it does not contain new column, yet.
+    fetch_time <- DBI::dbGetQuery(
+      conn = conn,
+      statement = paste0("SELECT * FROM ", target_table_time),
+      row.names = TRUE
+    )
+
+  }
+
+  #### TIME TABLE -  add new rows (with 0 initially!) for jobs that does not exist yet
+  new_jobs_name <- rownames(today_jobs_time)[!(rownames(today_jobs_time) %in% rownames(fetch_time))]
+  length(new_jobs_name)
+
+  if(length(new_jobs_name)){
+
+    scrape_log_info(
+      target_name = target_name,
+      url = url,
+      msg = glue("Found {n_jobs} new jobs for the given day: {Sys.Date()} that are not in the time database. Add rows for that with value of 0 for the
+                     past, since they didnt exist back then. This value has to be equal to the amount of new jobs in the id data table.."),
+      logger_name = logger_name
+    )
+
+
+    n_cols <- dim(fetch_time)[2]
+    n_jobs <- length(new_jobs_name)
+    new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols)
+    rownames(new_jobs) <- new_jobs_name
+    colnames(new_jobs) <- colnames(fetch_time)
+    all_jobdata_till_today <- rbind(fetch_time, new_jobs)
+
+  }else{
+
+    all_jobdata_till_today <- fetch_time
+    scrape_log_warn(
+      target_name = target_name,
+      url = url,
+      msg = glue("0 new job titles for the time database for the given day: {Sys.Date()}."),
+      logger_name = logger_name
+    )
+
+  }
+
+  idx_to_Change <- match(rownames(all_jobdata_till_today), rownames(today_jobs_time)) %>%
+    is.na %>%
+    magrittr::not() %>%
+    which
+  idx_to_Change
+
+  # insert amt jobs for the jobs found today
+  all_jobdata_till_today[[date_today]][idx_to_Change] <- today_jobs_time[[1]]
+  all_jobdata <- all_jobdata_till_today
+
+  DBI::dbWriteTable(
+    conn = conn,
+    name = target_table_time,
+    value = all_jobdata,
+    overwrite = TRUE,
+    row.names = TRUE
+  )
+
+  amt_duplicate_positions <- today_jobs_time[[1]] %>%
+    .[. > 1] %>%
+    {sum(.) - length(.)}
+
+  scrape_log_info(
+    target_name = target_name,
+    url = url,
+    msg = glue("{length(idx_to_Change)} new jobs were updated in multi_time data base. {amt_duplicate_positions} of it are duplicates."),
+    logger_name = logger_name
+  )
+  message(glue("{length(idx_to_Change)} new jobs were updated in multi_time data base. {amt_duplicate_positions} of it are duplicates."))
+}
+
 
 write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out, target_name, url, logger_name) {
 
@@ -87,40 +227,10 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   if(tbl_exists){
 
-    fetch_jobid <- DBI::dbGetQuery(
-      conn = conn,
-      statement = paste0("SELECT * FROM ", target_table_job)
-    )
+    output <- update_tbl(conn, target_table_job, data_to_store)
+    to_upload <- output[["to_upload"]]
+    new_jobs <- output[["new_jobsw"]]
 
-    new_jobs <- data_to_store[!(data_to_store$job_id %in% fetch_jobid$job_id), ]
-
-    # could also append = TRUE new_jobs. But new_jobs will not always have all required columns - not sure what the impacts
-    # of always overwriting the data is.
-    to_upload <- dplyr::bind_rows(
-      dplyr::mutate_all(fetch_jobid, as.character),
-      dplyr::mutate_all(new_jobs, as.character)
-    )
-
-    missing_Cols <- names(new_jobs)[!(names(new_jobs) %in% names(fetch_jobid))]
-
-    # Fehler: near ".1": syntax error --> error handling
-    dupl_col <- new_jobs %>%
-      names %>%
-      grepl(pattern = "[.]") %>%
-      which
-
-    dupl_col
-    if(length(dupl_col)){
-
-      warning(glue("duplicate columns with name: {names(new_jobs)[dupl_col]} is/are removed."))
-      new_jobs[[dupl_col]] <- NULL
-      missing_Cols <- names(new_jobs)[!(names(new_jobs) %in% names(fetch_jobid))]
-
-    }
-
-    statem <- glue("ALTER TABLE {target_table_job} ADD COLUMN {missing_Cols} TEXT")
-
-    sapply(statem, dbExecute, conn = conn)
 
   }else{
 
@@ -173,14 +283,14 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   ################ Time TABLE
 
-  date_Today <- Sys.Date() %>%
+  date_today <- Sys.Date() %>%
     as.numeric %>%
     toString
 
   tbl <- table(data_to_store$job_id %>% trimws)
   today_jobs_time <- data.frame(as.numeric(tbl))
   rownames(today_jobs_time) = names(tbl)
-  colnames(today_jobs_time) <- date_Today
+  colnames(today_jobs_time) <- date_today
 
   conn <- DBI::dbConnect(RSQLite::SQLite(), db_name)
 
@@ -189,98 +299,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   if(tbl_exists){
 
-    fetch_time <- DBI::dbGetQuery(
-      conn = conn,
-      statement = paste0("SELECT * FROM ", target_table_time),
-      row.names = TRUE
-    )
-
-    date_Col_Exists <- toString(as.numeric(Sys.Date())) %in% colnames(fetch_time)
-    date_Col_Exists
-    if(!date_Col_Exists){
-
-      date_Int <- toString(as.numeric(Sys.Date()))
-      statem <- glue("ALTER TABLE {target_table_time} ADD COLUMN '{date_Int}' INTEGER DEFAULT 0")
-      sapply(statem, dbExecute, conn = conn)
-      scrape_log_info(
-        target_name = target_name,
-        url = url,
-        msg = glue("In time database date column: {date_Int} is added."),
-        logger_name = logger_name
-      )
-
-      # have to update fetch_time variable since it does not contain new column, yet.
-      fetch_time <- DBI::dbGetQuery(
-        conn = conn,
-        statement = paste0("SELECT * FROM ", target_table_time),
-        row.names = TRUE
-      )
-
-    }
-
-    #### TIME TABLE -  add new rows (with 0 initially!) for jobs that does not exist yet
-    new_jobs_name <- rownames(today_jobs_time)[!(rownames(today_jobs_time) %in% rownames(fetch_time))]
-    length(new_jobs_name)
-
-    if(length(new_jobs_name)){
-
-      scrape_log_info(
-        target_name = target_name,
-        url = url,
-        msg = glue("Found {n_jobs} new jobs for the given day: {Sys.Date()} that are not in the time database. Add rows for that with value of 0 for the
-                   past, since they didnt exist back then. This value has to be equal to the amount of new jobs in the id data table.."),
-        logger_name = logger_name
-      )
-
-
-      n_cols <- dim(fetch_time)[2]
-      n_jobs <- length(new_jobs_name)
-      new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols)
-      rownames(new_jobs) <- new_jobs_name
-      colnames(new_jobs) <- colnames(fetch_time)
-      all_jobdata_till_today <- rbind(fetch_time, new_jobs)
-
-    }else{
-
-      all_jobdata_till_today <- fetch_time
-      scrape_log_warn(
-        target_name = target_name,
-        url = url,
-        msg = glue("0 new job titles for the time database for the given day: {Sys.Date()}."),
-        logger_name = logger_name
-      )
-
-    }
-
-    idx_to_Change <- match(rownames(all_jobdata_till_today), rownames(today_jobs_time)) %>%
-      is.na %>%
-      magrittr::not() %>%
-      which
-    idx_to_Change
-
-    # insert amt jobs for the jobs found today
-    all_jobdata_till_today[[date_Today]][idx_to_Change] <- today_jobs_time[[1]]
-    all_jobdata <- all_jobdata_till_today
-
-    DBI::dbWriteTable(
-      conn = conn,
-      name = target_table_time,
-      value = all_jobdata,
-      overwrite = TRUE,
-      row.names = TRUE
-    )
-
-    amt_duplicate_positions <- today_jobs_time[[1]] %>%
-      .[. > 1] %>%
-      {sum(.) - length(.)}
-
-    scrape_log_info(
-      target_name = target_name,
-      url = url,
-      msg = glue("{length(idx_to_Change)} new jobs were updated in multi_time data base. {amt_duplicate_positions} of it are duplicates."),
-      logger_name = logger_name
-    )
-    message(glue("{length(idx_to_Change)} new jobs were updated in multi_time data base. {amt_duplicate_positions} of it are duplicates."))
+    update_time_table(conn, target_table_time, target_name, url, logger_name, today_jobs_time, date_today)
 
   }else{
 
@@ -476,7 +495,7 @@ run <- function(){
   dir.create("response_raw")
   dir.create(folder_name)
 
-  get_nr <- 2
+  get_nr <- 4
 
   #length()
 
@@ -512,7 +531,8 @@ run <- function(){
 
   if(!length(nms)) stop("Did not find any downloaded files.")
 
-  nr <- 1
+  nr <- 4
+  names(SteveAI::rvestScraper)
   for(nr in seq(SteveAI::rvestScraper)){
 
     print(nr)

@@ -83,9 +83,9 @@ remove_header_footer <- function(text_raw, cut, dist = 0.3, header = TRUE){
     return(text_raw)
   }
 
-  str_len <- nchar(cut)
+  cut_len <- nchar(cut)
   s <- 1000
-  if(str_len > s) cut <- substring(cut, 1, s)
+  if(cut_len > s) cut <- substring(cut, 1, s)
   m <- aregexec(cut, text_raw, max.distance = dist, fixed = TRUE)
 
   if(m[[1]][1] == -1){
@@ -96,13 +96,13 @@ remove_header_footer <- function(text_raw, cut, dist = 0.3, header = TRUE){
 
   if(header){
 
-    replace <- substring(text_raw, first = m[[1]][1], last = m[[1]][1] + str_len) %>%
+    replace <- substring(text_raw, first = m[[1]][1], last = m[[1]][1] + cut_len) %>%
       unlist %>%
       .[1]
 
   }else{
 
-    replace <- substring(text_raw, first = m[[1]][1], last = str_len) %>%
+    replace <- substring(text_raw, first = m[[1]][1], last = nchar(text_raw)) %>%
       unlist %>%
       .[1]
 
