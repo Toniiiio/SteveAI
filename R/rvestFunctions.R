@@ -27,7 +27,8 @@ getHTML <- function(getURL, targetString){
   )
 }
 
-getXPathByText <- function(text, doc, exact = FALSE, attr = NULL, byIndex = FALSE, onlyTags = FALSE){
+# text <- txts[2]
+getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = NULL, byIndex = FALSE, onlyTags = FALSE, clean_up = TRUE){
 
   if(is.character(doc)){
 
@@ -37,8 +38,11 @@ getXPathByText <- function(text, doc, exact = FALSE, attr = NULL, byIndex = FALS
   }
 
   text %<>% tolower %>% gsub(pattern = " ", replacement = "")
+  text %<>% gsub(pattern = "\n|\r", replacement = "")
   xpath <- paste0("//*[text()[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ', 'abcdefghijklmnopqrstuvwxyz'), '", text, "')]]")
   tag <- doc %>% html_nodes(xpath = xpath)
+  xx <- "//*[contains(text(), 'ber uns')]"
+  doc %>% html_nodes(xpath = xx)
 
   tagName <- ""
   tags <- c()
@@ -49,12 +53,17 @@ getXPathByText <- function(text, doc, exact = FALSE, attr = NULL, byIndex = FALS
     if(!length(match)) match <- 1
     tag <- tag[match[1]]
   }else if(length(tag) == 0){
-    message(glue("Did not find an xpath element that matches target Text: {text}!"))
+    message(glue::glue("Did not find an xpath element that matches target Text: {text}!"))
     return(NULL)
   }
 
   while(tagName != "html"){
     tagName <- tag %>% html_name
+    if(add_class){
+      class <- tag %>% html_attr(name = "class")
+      class <- ifelse(is.na(class), yes =  "", no = glue::glue('[@class="{class}"]'))
+      tagName <- glue::glue("{tagName}{class}")
+    }
     tags <- c(tags, tagName)
     tag <- tag %>% html_nodes(xpath = "..")
   }

@@ -98,17 +98,18 @@ update_tbl <- function(conn, target_table_job, data_to_store) {
 
 
 update_time_table <- function(conn, target_table_time, target_name, url, logger_name, today_jobs_time, date_today) {
+
   fetch_time <- DBI::dbGetQuery(
     conn = conn,
     statement = paste0("SELECT * FROM ", target_table_time),
     row.names = TRUE
   )
 
-  date_Col_Exists <- toString(as.numeric(Sys.Date())) %in% colnames(fetch_time)
+  date_Col_Exists <- toString(as.numeric(date_today)) %in% colnames(fetch_time)
   date_Col_Exists
   if(!date_Col_Exists){
 
-    date_Int <- toString(as.numeric(Sys.Date()))
+    date_Int <- toString(as.numeric(date_today))
     statem <- glue("ALTER TABLE {target_table_time} ADD COLUMN '{date_Int}' INTEGER DEFAULT 0")
     sapply(statem, dbExecute, conn = conn)
     scrape_log_info(
@@ -133,17 +134,18 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
 
   if(length(new_jobs_name)){
 
+    n_cols <- dim(fetch_time)[2]
+    n_jobs <- length(new_jobs_name)
+
     scrape_log_info(
       target_name = target_name,
       url = url,
-      msg = glue("Found {n_jobs} new jobs for the given day: {Sys.Date()} that are not in the time database. Add rows for that with value of 0 for the
+      msg = glue("Found {n_jobs} new jobs for the given day: {date_today} that are not in the time database. Add rows for that with value of 0 for the
                      past, since they didnt exist back then. This value has to be equal to the amount of new jobs in the id data table.."),
       logger_name = logger_name
     )
 
 
-    n_cols <- dim(fetch_time)[2]
-    n_jobs <- length(new_jobs_name)
     new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols)
     rownames(new_jobs) <- new_jobs_name
     colnames(new_jobs) <- colnames(fetch_time)
@@ -155,7 +157,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
     scrape_log_warn(
       target_name = target_name,
       url = url,
-      msg = glue("0 new job titles for the time database for the given day: {Sys.Date()}."),
+      msg = glue("0 new job titles for the time database for the given day: {date_today}."),
       logger_name = logger_name
     )
 
@@ -193,7 +195,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
 }
 
 
-write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out, target_name, url, logger_name) {
+write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out, target_name, url, logger_name, date_today) {
 
   amtItems <- apply(out, 2, nchar)
 
@@ -229,7 +231,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
     output <- update_tbl(conn, target_table_job, data_to_store)
     to_upload <- output[["to_upload"]]
-    new_jobs <- output[["new_jobsw"]]
+    new_jobs <- output[["new_jobs"]]
 
 
   }else{
@@ -283,7 +285,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   ################ Time TABLE
 
-  date_today <- Sys.Date() %>%
+  date_today <- date_today %>%
     as.numeric %>%
     toString
 
@@ -350,7 +352,8 @@ if(!dir.exists("dataRvest")){
 
 }
 
-file_path <- file.path(getwd(), paste0("rvest_single_", Sys.Date(), ".log"))
+date_today <- Sys.Date()
+file_path <- file.path(getwd(), paste0("rvest_single_", date_today, ".log"))
 
 flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), logger= logger_name)
 
@@ -360,7 +363,7 @@ flog.info(msg = paste0("Logger successfully initialized from calling script at: 
 # library(magrittr)
 
 
-rvestScraping <- function(response, name, scraper){
+rvestScraping <- function(response, name, scraper, date_today){
 
   # check direct is its xml?
   if(is.character(response)){
@@ -405,7 +408,6 @@ rvestScraping <- function(response, name, scraper){
 
   log_node_len(nodes, name = name, scraper = scraper, content = content)
 
-
   rvestOut <- gsub(
     pattern = "\n|   |\tNew|\t",
     replacement = "",
@@ -432,12 +434,23 @@ rvestScraping <- function(response, name, scraper){
 
   if(length(rvestOut)){
 
+    if(length(rvestOut) != length(links)){
+      e <- glue("Lengths of jobNames and links differ. Jobnames: '{paste0(head(rvestOut, 3), collapse = '\n')}' and links: '{paste0(head(links, 3), collapse = '\n')}'")
+      print("DIFFERENT LENGTHS!")
+      scrape_log_error(
+        target_name = name,
+        msg = e,
+        url = scraper$url,
+        logger_name = logger_name
+      )
+      links <- NA
+    }
+
     out <- data.frame(
-      # x = rvestLink,
       jobName = rvestOut,
       links = links,
       comp = name,
-      date = Sys.Date(),
+      date = date_today,
       location = "",
       eingestelltAm = "",
       bereich = ""
@@ -485,13 +498,13 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
 }
 
 
-run <- function(){
+run <- function(date_today = Sys.Date()){
 
   print(Sys.time())
   data_raw <- list()
-  durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{Sys.Date()}.csv")
+  durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{date_today}.csv")
 
-  folder_name <- glue("response_raw/{Sys.Date()}")
+  folder_name <- glue("response_raw/{date_today}")
   dir.create("response_raw")
   dir.create(folder_name)
 
@@ -519,7 +532,7 @@ run <- function(){
       }
     )
 
-    file_Name <- glue("{names(SteveAI::rvestScraper)[get_nr]}_{Sys.Date()}.RData")
+    file_Name <- glue("{names(SteveAI::rvestScraper)[get_nr]}_{date_today}.RData")
     save(response, file = glue("{folder_name}/{file_Name}"))
   }
 
@@ -531,8 +544,8 @@ run <- function(){
 
   if(!length(nms)) stop("Did not find any downloaded files.")
 
-  nr <- 4
-  names(SteveAI::rvestScraper)
+  nr <- 2
+  #names(SteveAI::rvestScraper)
   for(nr in seq(SteveAI::rvestScraper)){
 
     print(nr)
@@ -554,7 +567,7 @@ run <- function(){
 
     print(name)
     data_raw[[name]] <- tryCatchLog(
-      expr = rvestScraping(response = response, scraper = scraper, name = name),
+      expr = rvestScraping(response = response, scraper = scraper, name = name, date_today = date_today),
       error = function(e){
         print(e)
         name <- names(SteveAI::rvestScraper)[nr]
@@ -591,7 +604,7 @@ run <- function(){
     end <- Sys.time()
     scrapeDuration <- as.numeric(end - start)
 
-    # fileNameJobDesc = paste0("dataRvest/JobDescLinks_", name, "_", Sys.Date(), ".csv")
+    # fileNameJobDesc = paste0("dataRvest/JobDescLinks_", name, "_", date_today, ".csv")
     # write.csv2(x = data_raw[[name]], file = fileNameJobDesc, row.names = FALSE)
 
 
@@ -621,7 +634,8 @@ run <- function(){
         out = out,
         target_name = name,
         url = url,
-        logger_name = logger_name
+        logger_name = logger_name,
+        date_today = date_today
       )
 
     }else{
@@ -646,6 +660,10 @@ run <- function(){
 
 
 }
+
+
+# run(date_today = Sys.Date() - 1)
+
 
 ### repair SteveAI::rvestScraper
 # for(nr in seq(SteveAI::rvestScraper)){
@@ -687,7 +705,7 @@ run <- function(){
 # rownames(to_db) <- to_db$title
 # to_db$title <- NULL
 # old_data$title <- NULL
-# colnames(to_db) <- c(colnames(old_data), Sys.Date())
+# colnames(to_db) <- c(colnames(old_data), date_today)
 #
 # if(need_update){
 #
