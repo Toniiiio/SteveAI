@@ -1,36 +1,42 @@
 
 
-filter_links <- function(links, filter_domain = FALSE){
+filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
-  links %<>%
-    {ifelse(test = substring(text = ., first = 1, last = 1) == "/", yes = paste0("https://www.", domain, .), no = .)}
+  # some links are reported like: "//www.saturn.de/de/category/_teegeräte-476120.html".
+  needs_start <- substring(text = links$href, first = 1, last = 1) == "/" &
+    !grepl(x = links$href, pattern = "http") &
+    !grepl(x = links$href, pattern = "www.", fixed = TRUE)
 
-  domains <- links %>%
+  links$href %<>%
+    {ifelse(test = needs_start, yes = paste0("https://www.", domain, .), no = .)}
+
+  domains <- links$href %>%
     urltools::domain() %>%
     gsub(pattern = "www.", replacement = "")
   # e.g. jobs.lidl.de should be same_domain as lidl.de - therefore use grepl instead of "=="
   same_domain <- is.na(domains) | grepl(pattern = domain, x = domains)
 
-  hash_link <- substr(links, 1, 1) == "#"
-  is_empty <- !nchar(links)
-  is_na <- is.na(links)
-  alr_exist <- links %in% parsed_links
-  is_html <- sapply(c("mailto:", "javascript:void", ".tif", ".mp4", ".mp3", ".tiff", ".png", ".gif", ".jpeg",".jpg", ".zip", ".pdf"),
-                    FUN = grepl, x = links) %>%
+  hash_link <- substr(links$href, 1, 1) == "#"
+  is_empty <- !nchar(links$href)
+  is_na <- is.na(links$href)
+  alr_exist <- links$href %in% parsed_links
+  is_html <- sapply(c("mailto:", "javascript:", ".tif", ".mp4", ".mp3", ".tiff", ".png", ".gif", ".jpeg",".jpg", ".zip", ".pdf"),
+                    FUN = grepl, x = tolower(links$href)) %>%
     rowSums %>%
     magrittr::not()
 
   links %<>%
-    .[!hash_link & !is_na & !is_empty & !alr_exist & is_html] %>%
-    unique
-  if(filter_domain) links %<>% .[same_domain] %>% unique
+    .[!hash_link & !is_na & !is_empty & !alr_exist & is_html, ] %>%
+    {.[!duplicated(.), ]}
+
+  if(filter_domain) links %<>% .[same_domain, ]
   # links %>% grepl(pattern = "jobs") %>% which %>% {links2[.]}
 
-  not_matched <- grepl(substring(text = links, first = 1, last = 1), pattern = "[a-z]", perl = TRUE) &
-    !grepl(links, pattern = "https://") &
-    !grepl(links, pattern = "www.")
+  not_matched <- grepl(substring(text = links$href, first = 1, last = 1), pattern = "[a-z]", perl = TRUE) &
+    !grepl(links$href, pattern = "https://") &
+    !grepl(links$href, pattern = "www.")
 
-  links %<>%
+  links$href %<>%
     {ifelse(
       test = not_matched,
       yes = paste0("https://www.", domain, "/", .),
@@ -44,27 +50,44 @@ filter_links <- function(links, filter_domain = FALSE){
 
 sort_links <- function(links){
 
-  links <- tolower(links)
-  direct_match <- c("(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)")
-  prioritize <- c("stellenmarkt", "jobboerse", "jobs", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf")
+  # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
+  links$href <- links$href
+  links$text <- tolower(links$text)
+  direct_match <- c("(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
+  # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
+  prioritize <- c("stellenmarkt", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
   de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz")
 
-  direct <- sapply(direct_match, grep, perl = TRUE, x = links) %>%
-    unlist %>%
-    {links[.]}
+   # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
+  direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%
+    which
 
-  first <- sapply(unique(prioritize), stringr::str_count, string = links) %>%
+  href <- sapply(unique(prioritize), stringr::str_count, string = tolower(links$href))
+  text <- sapply(unique(prioritize), stringr::str_count, string = links$text)
+
+  # todo: only heuristic
+  dims <- dim(text)
+  weights <- matrix(rep(rev(seq(dims[2])^2), dims[1]), nrow = dims[1], byrow = TRUE)
+  all <- as.matrix(href + text)
+  first <- as.matrix(all*weights) %>%
     rowSums(na.rm = TRUE) %>%
-    order(decreasing = TRUE) %>%
-    links[.]
+    {order(., decreasing = TRUE)[1:sum(. > 0)]}
     # unlist %>%
     # table %>% sort(decreasing = TRUE) %>%
     # {links[as.numeric(names(.))]}
+  links[first, ]
 
-  last <- sapply(de_prioritize, grep, x = links) %>%
-    unlist %>%
-    {links[.]}
+  href <- sapply(unique(de_prioritize), stringr::str_count, string = tolower(links$href))
+  text <- sapply(unique(de_prioritize), stringr::str_count, string = links$text)
 
-  links <- c(direct, first, setdiff(links, c(first, last)),last)
-  return(links)
+  # todo: only heuristic
+  dims <- dim(text)
+  weights <- matrix(rep(rev(seq(dims[2])^2), dims[1]), nrow = dims[1], byrow = TRUE)
+  all <- as.matrix(href + text)
+  last <- as.matrix(all*weights) %>%
+    rowSums(na.rm = TRUE) %>%
+    {order(., decreasing = TRUE)[1:sum(. > 0)]}
+
+  order <- c(direct, first, setdiff(seq(links$href), c(first, last, direct)),last)
+  return(links[order, ])
 }

@@ -1,10 +1,9 @@
 
 scrape_indeed <- function(){
-  url <- "https://de.indeed.com/cmp/_cs/cmpauto?returncmppageurls=1&q=a&caret=1&n=50"
 
+  url <- "https://de.indeed.com/cmp/_cs/cmpauto?returncmppageurls=1&q=a&caret=1&n=50"
   data <- url %>% httr::GET() %>% httr::content() %>% jsonlite::fromJSON()
   data
-
 
   urls <- paste0("https://de.indeed.com", data$overviewUrl,"/about")
 
