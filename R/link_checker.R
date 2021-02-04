@@ -106,6 +106,7 @@ url <- "https://www.wwf.de/"
 
 # grab all links from that url
 
+# url <- "https://www.danone.de"
 find_job_page <- function(url){
 
   domain <- urltools::domain(url) %>%
@@ -117,6 +118,8 @@ find_job_page <- function(url){
   links <- doc %>%
     html_nodes(xpath = "//a") %>%
     {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
+
+  if(!dim(links)[1]) stop("No links found")
   links %>% grepl(pattern = "jobs") %>% sum
   head(links)
   iter_nr <- 1
@@ -134,6 +137,7 @@ find_job_page <- function(url){
 
   links <- sort_links(links)
   links %>% head
+
   #links[1] %>% browseURL()
   iter_nr <- 0
   max_iter <- 10
@@ -179,12 +183,17 @@ find_job_page <- function(url){
 
     counts[iter_nr] <- unlist(matches[[iter_nr]]) %>% as.numeric() %>% sum
 
+    # "https://careers.danone.com/de-global/" %in% links$href
+    # "https://careers.danone.com/de-global/" %in% links2$href
     links <- rbind(links, all_links[[link]]) %>% filter_links(domain = domain, parsed_links = parsed_links)
-    head(links)
+
     parsed_links <- rbind(parsed_links, target_link)
+    links <- rbind(links, parsed_links)
 
     exclude <- duplicated(links$href) | duplicated(links$href, fromLast = TRUE)
-    links <- links[!exclude, ]
+
+    --links <- links[!exclude, ] %>% sort_links()
+    head(links)
 
     links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
     head(links)

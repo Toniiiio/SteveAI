@@ -57,7 +57,8 @@ getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = N
     return(NULL)
   }
 
-  while(tagName != "html"){
+
+  while(!grepl(x = tagName, pattern = "html")){
     tagName <- tag %>% html_name
     if(add_class){
       class <- tag %>% html_attr(name = "class")

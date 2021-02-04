@@ -51,11 +51,10 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 sort_links <- function(links){
 
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
-  links$href <- links$href
   links$text <- tolower(links$text)
   direct_match <- c("(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
+  prioritize <- c("stellenmarkt", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
   de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
@@ -71,7 +70,7 @@ sort_links <- function(links){
   all <- as.matrix(href + text)
   first <- as.matrix(all*weights) %>%
     rowSums(na.rm = TRUE) %>%
-    {order(., decreasing = TRUE)[1:sum(. > 0)]}
+    {order(., decreasing = TRUE)[0:sum(. > 0)]}
     # unlist %>%
     # table %>% sort(decreasing = TRUE) %>%
     # {links[as.numeric(names(.))]}
@@ -86,7 +85,7 @@ sort_links <- function(links){
   all <- as.matrix(href + text)
   last <- as.matrix(all*weights) %>%
     rowSums(na.rm = TRUE) %>%
-    {order(., decreasing = TRUE)[1:sum(. > 0)]}
+    {order(., decreasing = TRUE)[0:sum(. > 0)]}
 
   order <- c(direct, first, setdiff(seq(links$href), c(first, last, direct)),last)
   return(links[order, ])
