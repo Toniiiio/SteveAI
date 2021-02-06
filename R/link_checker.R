@@ -66,8 +66,6 @@ url <- "https://www.obi.de"
 # false positive match
 url <- "https://www.obi.de/karriere/"
 
-# javascript
-url <- "https://www.aok.de"
 
 # #link within --> Selenium
 url <- "https://www.gamestop.de/"
@@ -82,8 +80,6 @@ url <- "https://www.implico.com"
 
 url <- "https://www.sportplatz-media.com"
 
-# selenium javascript
-url <- "https://www.aboutyou.de/"
 
 #works
 url <- "https://www.wisag.de"
@@ -92,6 +88,13 @@ url <- "https://www.wisag.de"
 url <- "https://www.mytoys.de/"
 
 url <- "https://www.wwf.de/"
+url <- "https://www.dzbank.de/"
+
+# works with javascript
+url <- "https://www.quantexa.com"
+
+# selenium javascript - fails if try to get html - with permission denied
+url <- "https://www.aboutyou.de/"
 
 
 # txt <- target_url %>%
@@ -104,26 +107,111 @@ url <- "https://www.wwf.de/"
 # has_match
 
 
+start_selenium <- function(port){
+
+  # port = 4449
+  # sudo: no tty present and no askpass program specified
+  # --> https://stackoverflow.com/a/39553081/3502164
+  system(
+    "sudo -kS docker run -d -p 4449:4444 selenium/standalone-firefox:2.53.0",
+    input = "vistarundle1!!!"
+  )
+
+  library(RSelenium)
+  remDr <- RSelenium::remoteDriver(port = port)
+  remDr$open()
+  remDr$setWindowSize(width = 4800, height = 2400)
+  return(remDr)
+
+}
+
+remDr <- start_selenium(port = 4449)
+
+# has german/english local problem
+url <- "https://www.dzbank.de"
+url <- "http://www.cewe.de"
+
+# javascript - hidden behind buttons
+url <- "https://www.aok.de"
+
+
+url <- "https://www.wmf.de"
+
 # grab all links from that url
 
 # url <- "https://www.danone.de"
-find_job_page <- function(url){
+get_doc_selenium <- function(url, remDr){
+
+  remDr$navigate(url)
+  elem <- remDr$findElement(using = "xpath", value = "/html")
+  doc <- elem$getElementAttribute("innerHTML") %>%
+    .[[1]] %>%
+      xml2::read_html()
+  return(doc)
+}
+
+get_doc <- function(url){
+  url %>% xml2::read_html()
+}
+
+library(magrittr)
+library(rvest)
+library(xml2)
+use_selenium = TRUE
+
+remDr <- start_selenium(port = 4449)
+
+#remDr$screenshot(display = TRUE)
+
+
+follow_link <- function(link, use_selenium = FALSE){
+
+  if(use_selenium){
+    xp <- paste0("//*[contains(text(), '", "Search Jobs","')]")
+    remDr$screenshot(display = TRUE)
+    elem <- remDr$findElements(using = "xpath", value = xp)
+    clickElement2 <- function(remDr, elem){
+      remDr$executeScript("arguments[0].click();", args = elem[1])
+    }
+    clickElement2(remDr = remDr, elem = elem[2])
+
+    elem[[1]]$clickElement()
+    elem[[2]]$clickElement()
+    doc <- get_doc_selenium(url, remDr)
+  }else{
+    doc <- get_doc(link$href)
+  }
+}
+
+
+find_job_page <- function(url, remDr, use_selenium = TRUE){
 
   domain <- urltools::domain(url) %>%
     gsub(pattern = "www.", replacement = "")
   parsed_links <- data.frame(href = character(), text = character())
   links_per_level <- list()
   docs_per_level <- list()
-  doc <- url %>% read_html
-  links <- doc %>%
-    html_nodes(xpath = "//a") %>%
-    {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
+
+  if(use_selenium){
+    doc <- get_doc_selenium(url, remDr)
+  }else{
+    doc <- get_doc(url)
+  }
+
+  tags <- doc %>% html_nodes(xpath = "//*[self::a or self::button or self::input]")
+  txt <- tags %>% html_text()
+  val <- tags %>% html_attr(name = "value") %>% ifelse(is.na(.), "", .)
+  links <- data.frame(text = paste0(txt, val), href = tags %>% html_attr(name = "href"))
+
+  # links <- doc %>%
+  #   html_nodes(xpath = "//button") %>%
+  #   {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
 
   if(!dim(links)[1]) stop("No links found")
   links %>% grepl(pattern = "jobs") %>% sum
   head(links)
   iter_nr <- 1
-  links_per_level[1] <- url
+  #links_per_level[1] <- url
 
   html_texts <- list()
   links <- filter_links(links = links, domain = domain, parsed_links = parsed_links)
@@ -148,34 +236,40 @@ find_job_page <- function(url){
     iter_nr <- iter_nr + 1
     target_link <- links[1, ]
     link <- links$href[1]
+    id <- c(iter_nr, target_link) %>% paste(collapse = "-")
     print(link)
-    all_docs[[link]] <- tryCatch(
-      expr = link %>% xml2::read_html(),
-      error = function(e) ""
-    )
+    if(use_selenium){
+      all_docs[[id]] <- get_doc_selenium(link, remDr)
+    }else{
+      all_docs[[id]] <- tryCatch(
+        expr = link %>% xml2::read_html(),
+        error = function(e) ""
+      )
+    }
 
-    has_doc <- nchar(all_docs[[link]] %>% toString)
+
+    has_doc <- nchar(all_docs[[id]] %>% toString)
     if(has_doc){
 
-      all_links[[link]] <- all_docs[[link]] %>%
+      all_links[[id]] <- all_docs[[id]] %>%
         html_nodes(xpath = "//a") %>%
         {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
       # %>%{ifelse(test = substring(text = ., first = 1, last = 1) == "/", yes = paste0("https://www.", urltools::domain(link), .), no = .)}
 
-      html_texts[[link]] <- htm2txt::htm2txt(as.character(all_docs[[link]]))
+      html_texts[[id]] <- htm2txt::htm2txt(as.character(all_docs[[id]]))
 
     }else{
 
-      all_links[[link]] <- data.frame(href = character(), text = character())
+      all_links[[id]] <- data.frame(href = character(), text = character())
       warning("No content")
 
     }
 
-    #all_docs[[link]] %>% SteveAI::showHtmlPage()
-    # html_texts[[link]] %>% cat
+    #all_docs[[id]] %>% SteveAI::showHtmlPage()
+    # html_texts[[id]] %>% cat
     # doc <- "https://www.bofrost.de/karriere/job/" %>% read_html
 
-    doc <- all_docs[[link]]
+    doc <- all_docs[[id]]
 
     if(!exists("job_titles")) job_titles <- ""
 
@@ -185,14 +279,16 @@ find_job_page <- function(url){
 
     # "https://careers.danone.com/de-global/" %in% links$href
     # "https://careers.danone.com/de-global/" %in% links2$href
-    links <- rbind(links, all_links[[link]]) %>% filter_links(domain = domain, parsed_links = parsed_links)
+    links <- rbind(links, all_links[[id]]) %>% filter_links(domain = domain, parsed_links = parsed_links)
 
     parsed_links <- rbind(parsed_links, target_link)
     links <- rbind(links, parsed_links)
 
     exclude <- duplicated(links$href) | duplicated(links$href, fromLast = TRUE)
 
-    --links <- links[!exclude, ] %>% sort_links()
+    links <- links[!exclude, ] %>% sort_links()
+    links$href %>% grepl(pattern = "stellenangebote")
+    # taleo careersection jobsearch
     head(links)
 
     links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
@@ -214,6 +310,15 @@ find_job_page <- function(url){
     )
   )
 }
+
+library(magrittr)
+library(xml2)
+library(rvest)
+
+url <- "https://www.dzbank.de/content/dzbank_de/de/home/unser_profil/karriere/jobboerse.html"
+find_job_page(url, remDr, TRUE)
+
+
 
 # selenium javascript strange order
 url <- "https://www.wmf.de"

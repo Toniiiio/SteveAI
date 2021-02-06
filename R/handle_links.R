@@ -25,8 +25,13 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
     rowSums %>%
     magrittr::not()
 
+  #!is_na & --> need NA for click with selenium
+  # links2 <- links
+  # links <- links2
+  keep <- !hash_link & !is_empty & !alr_exist & is_html
+  keep[is.na(keep)] <- TRUE
   links %<>%
-    .[!hash_link & !is_na & !is_empty & !alr_exist & is_html, ] %>%
+    .[keep, ] %>%
     {.[!duplicated(.), ]}
 
   if(filter_domain) links %<>% .[same_domain, ]
@@ -50,11 +55,15 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
 sort_links <- function(links){
 
+  if(!dim(links)[1]){
+    warning("No links to sort: links are empty.")
+    return(links)
+  }
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
   links$text <- tolower(links$text)
   direct_match <- c("(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
+  prioritize <- c("stellenmarkt", "current-vacancies", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
   de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
@@ -62,7 +71,9 @@ sort_links <- function(links){
     which
 
   href <- sapply(unique(prioritize), stringr::str_count, string = tolower(links$href))
+  href[is.na(href)] <- 0
   text <- sapply(unique(prioritize), stringr::str_count, string = links$text)
+  text[is.na(text)] <- 0
 
   # todo: only heuristic
   dims <- dim(text)
