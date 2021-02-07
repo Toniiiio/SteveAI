@@ -67,16 +67,43 @@
 #
 # # url <- "https://www.holsten.de"
 #
+
+
+
+# html error - look deeper here
+url <- "https://www.lufthansa.de/"
+
 url <- "https://www.stabilo.com"
-#
-url <- "https://www.danone.de/"
+
+#works
+url <- "https://www.penny.de"
+
+# shitty seite - a la indeed
+url <- "https://www.netflix.com"
+
+# biegt zu linkedin ab
+url <- "https://www.ibm.com"
+
+# works with selenium
+url <- "https://www.airbnb.com"
+
+# search button
+url <- "https://www.microsoft.com"
+
+xx <- find_job_page(url, remDr, TRUE)
 
 # xx <- find_job_page(url)
 # #
-# xx$counts
-# xx$parsed_links$href
-# xx$parsed_links$href[xx$winner]
-# xx$parsed_links$href[xx$winner] %>% browseURL()
+xx$counts
+xx$parsed_links$href
+xx$parsed_links$href[xx$winner]
+xx$parsed_links$href[xx$winner] %>% browseURL()
+
+# professionals
+# opportunities
+# career opportunities
+# explore career opportunities
+
 #
 #
 #
