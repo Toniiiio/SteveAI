@@ -61,7 +61,7 @@ sort_links <- function(links){
   }
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
   links$text <- tolower(links$text)
-  direct_match <- c("(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
+  direct_match <- c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
   prioritize <- c("stellenmarkt", "current-vacancies", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
   de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz")

@@ -113,7 +113,7 @@ start_selenium <- function(port){
   # sudo: no tty present and no askpass program specified
   # --> https://stackoverflow.com/a/39553081/3502164
   system(
-    "sudo -kS docker run -d -p 4449:4444 selenium/standalone-firefox:2.53.0",
+    paste0("sudo -kS docker run -d -p ", port,":4444 selenium/standalone-firefox:2.53.0"),
     input = "vistarundle1!!!"
   )
 
@@ -125,7 +125,7 @@ start_selenium <- function(port){
 
 }
 
-remDr <- start_selenium(port = 4449)
+# remDr <- start_selenium(port = 4450)
 
 # has german/english local problem
 url <- "https://www.dzbank.de"
@@ -134,8 +134,13 @@ url <- "http://www.cewe.de"
 # javascript - hidden behind buttons
 url <- "https://www.aok.de"
 
-
+# strange start but works
 url <- "https://www.wmf.de"
+
+# german local english potential problem, doesnt find search page
+url <- "https://www.lidl.de"
+
+url <- "https://www.aldi-sued.de"
 
 # grab all links from that url
 
@@ -158,11 +163,6 @@ library(magrittr)
 library(rvest)
 library(xml2)
 use_selenium = TRUE
-
-remDr <- start_selenium(port = 4449)
-
-#remDr$screenshot(display = TRUE)
-
 
 follow_link <- function(link, use_selenium = FALSE){
 
@@ -302,7 +302,8 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
 
   return(
     list(
-      doc = doc,
+      doc = as.character(all_docs[[winner]]),
+      all_docs = all_docs,
       counts = counts,
       parsed_links = parsed_links,
       matches = matches,
@@ -311,13 +312,14 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
   )
 }
 
-library(magrittr)
-library(xml2)
-library(rvest)
+# cant replicate
+url <- "https://www.volkswagen.de"
 
-url <- "https://www.dzbank.de/content/dzbank_de/de/home/unser_profil/karriere/jobboerse.html"
-find_job_page(url, remDr, TRUE)
+# falscher abbieger zu linkedin - erst bei ferienjbos
+url <- "https://www.daimler.de"
 
+# works, but wrong filter
+url <- "https://www.rewe.de"
 
 
 # selenium javascript strange order
@@ -331,7 +333,7 @@ url <- "https://www.bofrost.de"
 # ungenau
 url <- "https://www.vodafone.de"
 
-#no jobs
+#no jobs present
 url <- "https://www.lotto.de"
 
 url <- "https://www.lotto-hessen.de"

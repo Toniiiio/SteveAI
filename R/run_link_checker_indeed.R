@@ -26,9 +26,11 @@ remDr <- start_selenium(port = 5514)
 
 names(indeed_results) %>% .[length(.)] %>%
   magrittr::equals(urls) %>% which
-nr <- 8
 
-for(nr in seq(urls)[26:3672]){
+# 275 --> repaired doc
+
+nr <- 292
+for(nr in seq(urls)[293:3672]){
   url <- urls[nr]
   indeed_results[[url]] <- tryCatch(
     find_job_page(url, remDr, TRUE),
@@ -39,3 +41,13 @@ for(nr in seq(urls)[26:3672]){
   )
   save(indeed_results, file = "data/job_page_candidates_indeed.RData")
 }
+
+#paypal, facebook, instagram, youtube
+
+# [1] "https://birdieco.de/barista-m-w-d-minijob-werksstudent-tagesgastronomie/#respond"
+#
+# Selenium message:Unable to locate element: {"method":"xpath","selector":"/html"}
+
+
+#Hier finden Sie unsere Jobangebote
+# link: careerfactors
