@@ -107,19 +107,31 @@ url <- "https://www.aboutyou.de/"
 # has_match
 
 
-start_selenium <- function(port){
+start_selenium <- function(port_nr = 4445){
 
   # port = 4449
   # sudo: no tty present and no askpass program specified
   # --> https://stackoverflow.com/a/39553081/3502164
-  system(
-    paste0("sudo -kS docker run -d -p ", port,":4444 selenium/standalone-firefox:2.53.0"),
-    input = "vistarundle1!!!"
+  tryCatch(
+    system(
+      paste0("sudo -kS docker run -d -p ", port_nr,":4444 selenium/standalone-firefox:2.53.0"),
+      input = "vistarundle1!!!"
+    ), error = function(e) warning("system docker call failed")
   )
 
-  library(RSelenium)
-  remDr <- RSelenium::remoteDriver(port = port)
+  #library(RSelenium)
+  is_windows <- Sys.info()['sysname'] == "Windows"
+  if(is_windows){
+    remDr <- remoteDriver(
+      remoteServerAddr = "localhost",
+      port = port_nr
+    )
+  }else{
+    remDr <- RSelenium::remoteDriver(port = port_nr)
+  }
+
   remDr$open()
+  # So that all elements can be seen and are not hidden
   remDr$setWindowSize(width = 4800, height = 2400)
   return(remDr)
 
@@ -147,6 +159,7 @@ url <- "https://www.aldi-sued.de"
 # url <- "https://www.danone.de"
 get_doc_selenium <- function(url, remDr){
 
+  url <- as.character(url)
   remDr$navigate(url)
   elem <- remDr$findElement(using = "xpath", value = "/html")
   doc <- elem$getElementAttribute("innerHTML") %>%

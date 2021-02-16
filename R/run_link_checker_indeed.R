@@ -15,6 +15,8 @@ library(urltools)
 
 
 
+
+
 source("R/is_job_offer_page.R")
 source("R/handle_links.R")
 source("R/link_checker.R")
@@ -22,15 +24,19 @@ load("data/comp_urls_indeed.RData")
 load("data/job_page_candidates_indeed.RData")
 urls <- unlist(comp_urls)
 
-remDr <- start_selenium(port = 5514)
+if(!exists("indeed_reuslts")){
+  indeed_results <- list()
+}
+
+remDr <- start_selenium(port = 4445)
 
 names(indeed_results) %>% .[length(.)] %>%
   magrittr::equals(urls) %>% which
 
 # 275 --> repaired doc
 
-nr <- 292
-for(nr in seq(urls)[293:3672]){
+nr <- 1
+for(nr in seq(urls)[1:3672]){
   url <- urls[nr]
   indeed_results[[url]] <- tryCatch(
     find_job_page(url, remDr, TRUE),
@@ -51,3 +57,6 @@ for(nr in seq(urls)[293:3672]){
 
 #Hier finden Sie unsere Jobangebote
 # link: careerfactors
+
+
+# which(indeed_results %>% sapply(typeof) == "list")
