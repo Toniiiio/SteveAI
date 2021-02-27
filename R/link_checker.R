@@ -107,27 +107,38 @@ url <- "https://www.aboutyou.de/"
 # has_match
 
 
-start_selenium <- function(port_nr = 4445){
-
-  # port = 4449
-  # sudo: no tty present and no askpass program specified
-  # --> https://stackoverflow.com/a/39553081/3502164
-  tryCatch(
-    system(
-      paste0("sudo -kS docker run -d -p ", port_nr,":4444 selenium/standalone-firefox:2.53.0"),
-      input = "vistarundle1!!!"
-    ), error = function(e) warning("system docker call failed")
-  )
+start_selenium <- function(port_nr = 4452){
 
   #library(RSelenium)
   is_windows <- Sys.info()['sysname'] == "Windows"
   if(is_windows){
-    remDr <- remoteDriver(
+
+    remDr <- RSelenium::remoteDriver(
       remoteServerAddr = "localhost",
       port = port_nr
     )
+    # port_nr = 4449
+    # sudo: no tty present and no askpass program specified
+    # --> https://stackoverflow.com/a/39553081/3502164
+    tryCatch(
+      system(
+        paste0("docker run -d -p ", port_nr,":4444 selenium/standalone-firefox:2.53.0")
+      ), error = function(e) warning("system docker call failed")
+    )
+
   }else{
+
     remDr <- RSelenium::remoteDriver(port = port_nr)
+    # port = 4449
+    # sudo: no tty present and no askpass program specified
+    # --> https://stackoverflow.com/a/39553081/3502164
+    tryCatch(
+      system(
+        paste0("sudo -kS docker run -d -p ", port_nr,":4444 selenium/standalone-firefox:2.53.0"),
+        input = "vistarundle1!!!"
+      ), error = function(e) warning("system docker call failed")
+    )
+
   }
 
   remDr$open()
@@ -161,12 +172,56 @@ get_doc_selenium <- function(url, remDr){
 
   url <- as.character(url)
   remDr$navigate(url)
-  elem <- remDr$findElement(using = "xpath", value = "/html")
+  domain <- remDr$getCurrentUrl()[[1]] %>%
+    urltools::domain() %>%
+    gsub(pattern = "www.", replacement = "")
+  elem <- remDr$findElement(using = "xpath", value = "/*")
   doc <- elem$getElementAttribute("innerHTML") %>%
     .[[1]] %>%
       xml2::read_html()
-  return(doc)
+  return(
+    list(doc = doc, domain = domain)
+  )
 }
+
+get_doc_phantom <- function(url, ses){
+
+  url <- as.character(url)
+  tryCatch(ses$go(url), error = function(e){
+    warning("Need to restart phantom webdriver")
+    pjs <- webdriver::run_phantomjs()
+    ses <<- webdriver::Session$new(port = pjs$port)
+    ses$go(url)
+  })
+
+
+  domain <- tryCatch(ses$getUrl(), error = function(e) return("")) %>%
+    urltools::domain() %>%
+    gsub(pattern = "www.", replacement = "")
+
+  doc <- tryCatch(ses$findElement(xpath = "/*")$getAttribute(name = "innerHTML") %>%
+    xml2::read_html(), error = function(e){
+      return("")
+  })
+
+  return(
+    list(doc = doc, domain = domain, ses = ses)
+  )
+}
+
+start_phantom <- function(){
+  pjs <- webdriver::run_phantomjs()
+  webdriver::Session$new(port = pjs$port)
+}
+
+#ses <- start_phantom()
+
+ds <- function(ses){
+  ses$go(url = "https://www.google.de")
+}
+ds(ses)
+
+
 
 get_doc <- function(url){
   url %>% xml2::read_html()
@@ -190,35 +245,56 @@ follow_link <- function(link, use_selenium = FALSE){
 
     elem[[1]]$clickElement()
     elem[[2]]$clickElement()
-    doc <- get_doc_selenium(url, remDr)
+    out <- get_doc_selenium(url, remDr)
+    doc <- out$doc
+    domain <- out$domain
+
   }else{
     doc <- get_doc(link$href)
   }
 }
 
 
-find_job_page <- function(url, remDr, use_selenium = TRUE){
+#remDr <- start_selenium(port_nr = 4459)
+#url <- "https://www.avitea.de/" --> selenium dies
+#url <- "https://www.daimler.de/"
+#url <- "https://www.jobs.abbott/us/en/search-results"
+remDr = NULL
+ses = NULL
+use_selenium = FALSE
+use_phantom = TRUE
+find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
-  domain <- urltools::domain(url) %>%
-    gsub(pattern = "www.", replacement = "")
-  parsed_links <- data.frame(href = character(), text = character())
+  parsed_links <- data.frame(href = character(max_iter), text = character(max_iter))
   links_per_level <- list()
   docs_per_level <- list()
 
   if(use_selenium){
-    doc <- get_doc_selenium(url, remDr)
+    out <- get_doc_selenium(url, remDr)
+    doc <- out$doc
+    domain <- out$domain
+  }else if(use_phantom){
+    out <- tryCatch(get_doc_phantom(url, ses), error = function(e){
+      warning(e)
+      # ses <<- webdriver::Session$new(port = pjs$port)
+      return(
+        list(ses = ses, domain = "", doc = "")
+      )
+    })
+    ses <- out$ses
+    domain <- out$domain
+    doc <- out$doc
   }else{
-    doc <- get_doc(url)
+    doc <- tryCatch(
+      expr = link %>% xml2::read_html(),
+      error = function(e) ""
+    )
   }
 
   tags <- doc %>% html_nodes(xpath = "//*[self::a or self::button or self::input]")
   txt <- tags %>% html_text()
   val <- tags %>% html_attr(name = "value") %>% ifelse(is.na(.), "", .)
   links <- data.frame(text = paste0(txt, val), href = tags %>% html_attr(name = "href"))
-
-  # links <- doc %>%
-  #   html_nodes(xpath = "//button") %>%
-  #   {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
 
   if(!dim(links)[1]) stop("No links found")
   links %>% grepl(pattern = "jobs") %>% sum
@@ -228,8 +304,6 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
 
   html_texts <- list()
   links <- filter_links(links = links, domain = domain, parsed_links = parsed_links)
-  links
-
 
   # catch document and all links
   all_links <- list()
@@ -251,15 +325,30 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
     link <- links$href[1]
     id <- c(iter_nr, target_link) %>% paste(collapse = "-")
     print(link)
+    # workaround until frames are supported
+    if(is.na(link)){
+      exclude <- links$href %in% link
+      links <- links[!exclude, ]
+      message("skipping NA (frame link)")
+      next
+    }
+
+    #all_docs[[id]] %>% showHtmlPage()
     if(use_selenium){
-      all_docs[[id]] <- get_doc_selenium(link, remDr)
+      out <- get_doc_selenium(url = link, remDr)
+      all_docs[[id]] <- out$doc
+      domain <- out$domain
+    }else if(use_phantom){
+      out <- get_doc_phantom(url = link, ses = ses)
+      ses <- out$ses
+      domain <- out$domain
+      all_docs[[id]] <- out$doc
     }else{
       all_docs[[id]] <- tryCatch(
         expr = link %>% xml2::read_html(),
         error = function(e) ""
       )
     }
-
 
     has_doc <- nchar(all_docs[[id]] %>% toString)
     if(has_doc){
@@ -269,7 +358,12 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
         {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
       # %>%{ifelse(test = substring(text = ., first = 1, last = 1) == "/", yes = paste0("https://www.", urltools::domain(link), .), no = .)}
 
-      html_texts[[id]] <- htm2txt::htm2txt(as.character(all_docs[[id]]))
+      html_texts[[id]] <- tryCatch(htm2txt::htm2txt(as.character(all_docs[[id]])),
+                                   error = function(e){
+                                     message(e)
+                                     warning(e)
+                                     return("")
+                                   })
 
     }else{
 
@@ -292,17 +386,33 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
 
     # "https://careers.danone.com/de-global/" %in% links$href
     # "https://careers.danone.com/de-global/" %in% links2$href
-    links <- rbind(links, all_links[[id]]) %>% filter_links(domain = domain, parsed_links = parsed_links)
+    # todo: cant find src in code - maybe have to use swith to frame but cant use it as new link then
+    iframe_links_raw <- doc %>%
+      html_nodes(xpath = "//iframe") %>%
+      html_attr("src")
 
-    parsed_links <- rbind(parsed_links, target_link)
-    links <- rbind(links, parsed_links)
+    if(length(iframe_links_raw)){
+      if(is.na(iframe_links_raw)){
+        iframe_links_raw <- character()
+      }
+    }
 
-    exclude <- duplicated(links$href) | duplicated(links$href, fromLast = TRUE)
+    iframe_links <- data.frame(href = iframe_links_raw, text = rep("iframe", length(iframe_links_raw)))
+
+    parsed_links[iter_nr, ] <- target_link
+    links <- rbind(iframe_links, links, all_links[[id]]) %>%
+      filter_links(domain = domain, parsed_links = parsed_links)
+    links <- links[!duplicated(links$href), ]
+    links$href
+
+    links <- rbind(parsed_links, links)
+    head(links)
+    exclude <- links$href %in% parsed_links$href
+    head(exclude)
 
     links <- links[!exclude, ] %>% sort_links()
-    links$href %>% grepl(pattern = "stellenangebote")
     # taleo careersection jobsearch
-    head(links)
+    head(links$href)
 
     links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
     head(links)
@@ -312,11 +422,13 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
   winner <- which(max(counts, na.rm = TRUE) == counts)[1]
   # targets <- parsed_links[max(counts, na.rm = TRUE) == counts]
   # targets[1] %>% browseURL()
+  counts
+  parsed_links$href
 
   return(
     list(
       doc = as.character(all_docs[[winner]]),
-      all_docs = all_docs,
+      all_docs = lapply(all_docs, as.character),
       counts = counts,
       parsed_links = parsed_links,
       matches = matches,
@@ -328,8 +440,6 @@ find_job_page <- function(url, remDr, use_selenium = TRUE){
 # cant replicate
 url <- "https://www.volkswagen.de"
 
-# falscher abbieger zu linkedin - erst bei ferienjbos
-url <- "https://www.daimler.de"
 
 # works, but wrong filter
 url <- "https://www.rewe.de"
@@ -364,8 +474,17 @@ url <- "http://www.actioservice.de"
 
 url <- "https://ayka-therapie.de/"
 
-"Results 1 – 25 of"
-"Ergebnisse 1 – 25 von"
-"vacancies"
-"current-vacancies"
 
+
+# falscher abbieger zu linkedin - erst bei ferienjbos
+url <- "https://www.daimler.de"
+# https://www.daimler.de/karriere/jobsuche/"
+
+
+# url <- "https://www.tesa.de"
+# remDr <- start_selenium()
+# xx <- find_job_page(url, remDr, use_selenium = TRUE)
+# xx$winner
+# xx$counts
+# xx$parsed_links$href[xx$winner]
+# xx$parsed_links$href[xx$winner] %>% browseURL()

@@ -11,7 +11,7 @@ matches_job_name_db <- function(doc, html_text, db_name = "rvest_scraper.db", ta
 
   job_names <- unique(data$jobName)
 
-  texts <- approx_match_strings(job_names, html_text)
+  texts <- approx_match_strings(target_strings = job_names, html_text = html_text)
   return(table(texts))
 
   # xpathes <- sapply(txts, SteveAI::getXPathByText, doc = doc) %>%
@@ -42,7 +42,7 @@ has_apply_button <- function(doc){
 }
 
 match_strings <- function(target_strings, html_text){
-  has_target_strings <- !nchar(target_strings)
+  has_target_strings <- !nchar(target_strings) %>% sum
   if(has_target_strings) return(FALSE)
 
   sapply(tolower(target_strings), stringr::str_count, string = tolower(html_text)) %>%
@@ -55,7 +55,7 @@ match_strings <- function(target_strings, html_text){
 # html_text <- "as d as"
 approx_match_strings <- function(target_strings, html_text){
 
-  has_targets <- nchar(target_strings)
+  has_targets <- nchar(target_strings) %>% sum
   if(!has_targets) return(character())
 
   matches <- sapply(
@@ -89,15 +89,18 @@ target_indicator_count <- function(job_titles, doc){
 
   if(!nchar(doc[1])) return(FALSE)
 
-  html_text <- doc %>%
-    as.character %>%
-    htm2txt::htm2txt()
+  html_text <- tryCatch(doc %>% as.character %>% htm2txt::htm2txt(),
+                        error = function(e){
+                          message(e)
+                          warning(e)
+                          return("")
+                        })
 
   indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/d", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "(Junior) ", "(Senior) ")
   add_indicators <- match_strings(target_strings = indicators, html_text = html_text)
   indeed_jobs <- approx_match_strings(target_strings = job_titles, html_text = html_text)
   apply_button <- has_apply_button(doc)
-  job_name_db <- matches_job_name_db(doc, html_text, db_name = "rvest_scraper.db", target_table_job = "RVEST_SINGLE_JOBS")
+  job_name_db <- matches_job_name_db(doc = doc, html_text = html_text, db_name = "rvest_scraper.db", target_table_job = "RVEST_SINGLE_JOBS")
 
   list(
     add_indicators = add_indicators,

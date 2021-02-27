@@ -12,7 +12,8 @@ library(urltools)
 #   input = "vistarundle1!!!"
 # )
 
-
+# powershell
+# docker ps -aq | foreach {docker rm $_}
 
 
 
@@ -23,32 +24,44 @@ source("R/link_checker.R")
 load("data/comp_urls_indeed.RData")
 load("data/job_page_candidates_indeed.RData")
 urls <- unlist(comp_urls)
+ses <<- start_phantom()
 
-if(!exists("indeed_reuslts")){
-  indeed_results <- list()
-}
+# if(!exists("indeed_reuslts")){
+#   indeed_results <- list()
+# }
 
-remDr <- start_selenium(port = 4445)
+
+#remDr <- start_selenium(port = 4457)
 
 names(indeed_results) %>% .[length(.)] %>%
   magrittr::equals(urls) %>% which
 
 # 275 --> repaired doc
 
-nr <- 1
-for(nr in seq(urls)[1:3672]){
+# 20 fails
+# 3 let selenium stop
+# https://www.accenture.com/us-en/careers/jobsearch weird html with only script but with data
+# but https://www.accenture.com/us-en/careers/explore-careers/area-of-interest/consulting-careers works
+# 21 fails
+# 22 fails
+# 41 ses fails
+# 42 weird
+
+nr <- 43
+for(nr in seq(urls)[4:3672]){
   url <- urls[nr]
   indeed_results[[url]] <- tryCatch(
-    find_job_page(url, remDr, TRUE),
+    find_job_page(url, ses, use_phantom = TRUE),
     error = function(e){
-      remDr <- tryCatch(start_selenium (port = 5512 + nr), error = function(e) return(""))
+      print("Call to find_job_page failed with:")
+      print(e)
       return("")
     }
   )
-  save(indeed_results, file = "data/job_page_candidates_indeed.RData")
+   save(indeed_results, file = "data/job_page_candidates_indeed.RData")
 }
 
-#paypal, facebook, instagram, youtube
+#paypal, facebook, instagram, youtube, cookiebot.com
 
 # [1] "https://birdieco.de/barista-m-w-d-minijob-werksstudent-tagesgastronomie/#respond"
 #
@@ -57,6 +70,12 @@ for(nr in seq(urls)[1:3672]){
 
 #Hier finden Sie unsere Jobangebote
 # link: careerfactors
+#
+# 1] "https://www.adiro.eu/jobs/"
+# [1] "https://www.adiro.eu/"
+# [1] "https://www.adiro.eu/jobs/"
+
+
 
 
 # which(indeed_results %>% sapply(typeof) == "list")

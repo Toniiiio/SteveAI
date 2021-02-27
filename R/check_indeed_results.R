@@ -35,14 +35,14 @@ dont_run <- function(){
   # 259 wrong turn to paypal
   # 262 find  (m / w/d)
   # 264: find better path?
-  nr <- 273
+  nr <- 3
 
   xx <- indeed_results[[nr]]
+  xx$all_docs[1]
   xx$counts
   xx$parsed_links$href
   xx$parsed_links$href[xx$winner]
   xx$parsed_links$href[xx$winner] %>% browseURL()
-
 
   doc <- xx$doc %>% xml2::read_html()
   target_text <- xx$matches[xx$winner] %>%
@@ -58,7 +58,6 @@ dont_run <- function(){
   xpath <- getXPathByText(text = target_text, doc = doc, add_class = TRUE, )
   xpath
   html_nodes(x = doc, xpath = xpath) %>% html_text()
-
 
   indeed_results[[nr]]$result <- "need_button"
   indeed_results[[nr]]$result <- "works incomplete xpath"

@@ -1,7 +1,13 @@
 
 
+equalize_links <- function(link){
+  rm_last_char <- substring(link, first = nchar(link)) == "/"
+  ifelse(rm_last_char, yes = substring(link, first = 1, last = nchar(link) - 1), no = link)
+}
+
 filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
+  links$href <- sapply(links$href, equalize_links)
   # some links are reported like: "//www.saturn.de/de/category/_teegeräte-476120.html".
   needs_start <- substring(text = links$href, first = 1, last = 1) == "/" &
     !grepl(x = links$href, pattern = "http") &
@@ -61,10 +67,12 @@ sort_links <- function(links){
   }
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
   links$text <- tolower(links$text)
-  direct_match <- c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)") %>% paste(collapse = "|")
+  direct_match <- c(paste(c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)"), collapse = "|"),
+                    "Ergebnisse 1 – 25 von", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ")
+
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
   prioritize <- c("stellenmarkt", "current-vacancies", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
-  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz")
+  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%
@@ -82,15 +90,13 @@ sort_links <- function(links){
   first <- as.matrix(all*weights) %>%
     rowSums(na.rm = TRUE) %>%
     {order(., decreasing = TRUE)[0:sum(. > 0)]}
-    # unlist %>%
-    # table %>% sort(decreasing = TRUE) %>%
-    # {links[as.numeric(names(.))]}
-  links[first, ]
+
+  links[first, ]$href
 
   href <- sapply(unique(de_prioritize), stringr::str_count, string = tolower(links$href))
   text <- sapply(unique(de_prioritize), stringr::str_count, string = links$text)
 
-  # todo: only heuristic
+  # todo: only heuristic so far
   dims <- dim(text)
   weights <- matrix(rep(rev(seq(dims[2])^2), dims[1]), nrow = dims[1], byrow = TRUE)
   all <- as.matrix(href + text)
@@ -98,6 +104,10 @@ sort_links <- function(links){
     rowSums(na.rm = TRUE) %>%
     {order(., decreasing = TRUE)[0:sum(. > 0)]}
 
-  order <- c(direct, first, setdiff(seq(links$href), c(first, last, direct)),last)
+  iframe <- which(links$text == "iframe")
+  iframe <- setdiff(iframe, last)
+
+  order <- c(iframe, direct, first, setdiff(seq(links$href), c(first, last, direct)),last) %>%
+    unique
   return(links[order, ])
 }
