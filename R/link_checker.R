@@ -216,11 +216,6 @@ start_phantom <- function(){
 
 #ses <- start_phantom()
 
-ds <- function(ses){
-  ses$go(url = "https://www.google.de")
-}
-ds(ses)
-
 
 
 get_doc <- function(url){
@@ -254,17 +249,133 @@ follow_link <- function(link, use_selenium = FALSE){
   }
 }
 
+parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, use_phantom = TRUE, ses = NULL, remDr = NULL){
+
+  links <- link_meta$links
+  all_docs <- link_meta$all_docs
+  html_texts <- link_meta$html_texts
+  matches <- link_meta$matches
+  all_links <- link_meta$all_links
+  counts <- link_meta$counts
+  parsed_links <- link_meta$parsed_links
+
+  link <- links$href[1]
+  id <- c(iter_nr, target_link) %>% paste(collapse = "-")
+  print(link)
+  # workaround until frames are supported
+  if(is.na(link)){
+    exclude <- links$href %in% link
+    links <- links[!exclude, ]
+    message("skipping NA (frame link)")
+    return()
+  }
+
+  #all_docs[[id]] %>% showHtmlPage()
+  if(use_selenium){
+    out <- get_doc_selenium(url = link, remDr)
+    all_docs[[id]] <- out$doc
+    domain <- out$domain
+  }else if(use_phantom){
+    out <- get_doc_phantom(url = link, ses = ses)
+    ses <- out$ses
+    domain <- out$domain
+    all_docs[[id]] <- out$doc
+  }else{
+    all_docs[[id]] <- tryCatch(
+      expr = link %>% xml2::read_html(),
+      error = function(e) ""
+    )
+  }
+
+  has_doc <- nchar(all_docs[[id]] %>% toString)
+  if(has_doc){
+
+    all_links[[id]] <- all_docs[[id]] %>%
+      html_nodes(xpath = "//a") %>%
+      {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
+    # %>%{ifelse(test = substring(text = ., first = 1, last = 1) == "/", yes = paste0("https://www.", urltools::domain(link), .), no = .)}
+
+    html_texts[[id]] <- tryCatch(htm2txt::htm2txt(as.character(all_docs[[id]])),
+                                 error = function(e){
+                                   message(e)
+                                   warning(e)
+                                   return("")
+                                 })
+
+  }else{
+
+    all_links[[id]] <- data.frame(href = character(), text = character())
+    warning("No content")
+
+  }
+
+  #all_docs[[id]] %>% SteveAI::showHtmlPage()
+  # html_texts[[id]] %>% cat
+  # doc <- "https://www.bofrost.de/karriere/job/" %>% read_html
+
+  doc <- all_docs[[id]]
+
+  if(!exists("job_titles")) job_titles <- ""
+
+  matches[[iter_nr]] <- target_indicator_count(job_titles = job_titles, doc = doc)
+
+  counts[iter_nr] <- unlist(matches[[iter_nr]]) %>% as.numeric() %>% sum
+
+  # "https://careers.danone.com/de-global/" %in% links$href
+  # "https://careers.danone.com/de-global/" %in% links2$href
+  # todo: cant find src in code - maybe have to use swith to frame but cant use it as new link then
+  iframe_links_raw <- doc %>%
+    html_nodes(xpath = "//iframe") %>%
+    html_attr("src")
+
+  if(length(iframe_links_raw)){
+    if(is.na(iframe_links_raw)){
+      iframe_links_raw <- character()
+    }
+  }
+
+  iframe_links <- data.frame(href = iframe_links_raw, text = rep("iframe", length(iframe_links_raw)))
+
+  parsed_links[iter_nr, ] <- target_link
+  links <- rbind(iframe_links, links, all_links[[id]]) %>%
+    filter_links(domain = domain, parsed_links = parsed_links)
+  links <- links[!duplicated(links$href), ]
+  links$href
+
+  links <- rbind(parsed_links, links)
+  head(links)
+  exclude <- links$href %in% parsed_links$href
+  head(exclude)
+
+  links <- links[!exclude, ] %>% sort_links()
+  # taleo careersection jobsearch
+  head(links$href)
+
+  links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
+
+
+  return(
+    list(
+      links = links, all_docs = all_docs, all_links = all_links,
+      parsed_links = parsed_links,
+      html_texts = html_texts, matches = matches, counts = counts
+    )
+  )
+
+}
 
 #remDr <- start_selenium(port_nr = 4459)
 #url <- "https://www.avitea.de/" --> selenium dies
 #url <- "https://www.daimler.de/"
 #url <- "https://www.jobs.abbott/us/en/search-results"
 remDr = NULL
-ses = NULL
+ses <<- start_phantom()
 use_selenium = FALSE
 use_phantom = TRUE
 find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
+  iter_nr <- 0
+  max_iter <- 10
   parsed_links <- data.frame(href = character(max_iter), text = character(max_iter))
   links_per_level <- list()
   docs_per_level <- list()
@@ -299,7 +410,7 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   if(!dim(links)[1]) stop("No links found")
   links %>% grepl(pattern = "jobs") %>% sum
   head(links)
-  iter_nr <- 1
+  iter_nr <- 0
   #links_per_level[1] <- url
 
   html_texts <- list()
@@ -314,116 +425,40 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   links %>% head
 
   #links[1] %>% browseURL()
-  iter_nr <- 0
-  max_iter <- 10
   counts <- rep(NA, max_iter)
+
+  link_meta <- list(
+    links = links, all_docs = all_docs, all_links = all_links,
+    parsed_links = parsed_links,
+    html_texts = html_texts, matches = matches, counts = counts
+  )
+
 
   while(iter_nr < max_iter){
 
     iter_nr <- iter_nr + 1
-    target_link <- links[1, ]
-    link <- links$href[1]
-    id <- c(iter_nr, target_link) %>% paste(collapse = "-")
-    print(link)
-    # workaround until frames are supported
-    if(is.na(link)){
-      exclude <- links$href %in% link
-      links <- links[!exclude, ]
-      message("skipping NA (frame link)")
+    target_link <- link_meta$links[1, ]
+
+    if(is.na(target_link$href)){
+      link_meta$links <- link_meta$links[-1, ]
       next
     }
-
-    #all_docs[[id]] %>% showHtmlPage()
-    if(use_selenium){
-      out <- get_doc_selenium(url = link, remDr)
-      all_docs[[id]] <- out$doc
-      domain <- out$domain
-    }else if(use_phantom){
-      out <- get_doc_phantom(url = link, ses = ses)
-      ses <- out$ses
-      domain <- out$domain
-      all_docs[[id]] <- out$doc
-    }else{
-      all_docs[[id]] <- tryCatch(
-        expr = link %>% xml2::read_html(),
-        error = function(e) ""
-      )
-    }
-
-    has_doc <- nchar(all_docs[[id]] %>% toString)
-    if(has_doc){
-
-      all_links[[id]] <- all_docs[[id]] %>%
-        html_nodes(xpath = "//a") %>%
-        {data.frame(href = html_attr(x = ., name = "href"), text = html_text(.))}
-      # %>%{ifelse(test = substring(text = ., first = 1, last = 1) == "/", yes = paste0("https://www.", urltools::domain(link), .), no = .)}
-
-      html_texts[[id]] <- tryCatch(htm2txt::htm2txt(as.character(all_docs[[id]])),
-                                   error = function(e){
-                                     message(e)
-                                     warning(e)
-                                     return("")
-                                   })
-
-    }else{
-
-      all_links[[id]] <- data.frame(href = character(), text = character())
-      warning("No content")
-
-    }
-
-    #all_docs[[id]] %>% SteveAI::showHtmlPage()
-    # html_texts[[id]] %>% cat
-    # doc <- "https://www.bofrost.de/karriere/job/" %>% read_html
-
-    doc <- all_docs[[id]]
-
-    if(!exists("job_titles")) job_titles <- ""
-
-    matches[[iter_nr]] <- target_indicator_count(job_titles = job_titles, doc = doc)
-
-    counts[iter_nr] <- unlist(matches[[iter_nr]]) %>% as.numeric() %>% sum
-
-    # "https://careers.danone.com/de-global/" %in% links$href
-    # "https://careers.danone.com/de-global/" %in% links2$href
-    # todo: cant find src in code - maybe have to use swith to frame but cant use it as new link then
-    iframe_links_raw <- doc %>%
-      html_nodes(xpath = "//iframe") %>%
-      html_attr("src")
-
-    if(length(iframe_links_raw)){
-      if(is.na(iframe_links_raw)){
-        iframe_links_raw <- character()
-      }
-    }
-
-    iframe_links <- data.frame(href = iframe_links_raw, text = rep("iframe", length(iframe_links_raw)))
-
-    parsed_links[iter_nr, ] <- target_link
-    links <- rbind(iframe_links, links, all_links[[id]]) %>%
-      filter_links(domain = domain, parsed_links = parsed_links)
-    links <- links[!duplicated(links$href), ]
-    links$href
-
-    links <- rbind(parsed_links, links)
-    head(links)
-    exclude <- links$href %in% parsed_links$href
-    head(exclude)
-
-    links <- links[!exclude, ] %>% sort_links()
-    # taleo careersection jobsearch
-    head(links$href)
-
-    links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
-    head(links)
+    link_meta <- parse_link(
+      target_link = target_link,
+      iter_nr = iter_nr, link_meta = link_meta,
+      use_selenium = FALSE, use_phantom = TRUE,
+      remDr = NULL
+    )
 
   }
 
-  winner <- which(max(counts, na.rm = TRUE) == counts)[1]
+
+  winner <- which(max(link_meta$counts, na.rm = TRUE) == link_meta$counts)[1]
   # targets <- parsed_links[max(counts, na.rm = TRUE) == counts]
   # targets[1] %>% browseURL()
-  counts
-  parsed_links$href
+  link_meta$counts
+  link_meta$parsed_links$href
+  link_meta$parsed_links$href[6]
 
   return(
     list(

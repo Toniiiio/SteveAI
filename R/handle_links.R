@@ -12,6 +12,10 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   needs_start <- substring(text = links$href, first = 1, last = 1) == "/" &
     !grepl(x = links$href, pattern = "http") &
     !grepl(x = links$href, pattern = "www.", fixed = TRUE)
+  needs_start[is.na(needs_start)] <- FALSE
+  links$href[needs_start]
+  # links %>% grepl(pattern = "https://www.aecom.com/http:")
+  # links <- links2
 
   links$href %<>%
     {ifelse(test = needs_start, yes = paste0("https://www.", domain, .), no = .)}
@@ -45,7 +49,9 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
   not_matched <- grepl(substring(text = links$href, first = 1, last = 1), pattern = "[a-z]", perl = TRUE) &
     !grepl(links$href, pattern = "https://") &
-    !grepl(links$href, pattern = "www.")
+    !grepl(links$href, pattern = "http://") &
+    !grepl(links$href, pattern = "www.") &
+    !is.na(links$href)
 
   links$href %<>%
     {ifelse(
@@ -72,7 +78,7 @@ sort_links <- function(links){
 
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
   prioritize <- c("stellenmarkt", "current-vacancies", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
-  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies")
+  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%

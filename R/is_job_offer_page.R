@@ -96,7 +96,7 @@ target_indicator_count <- function(job_titles, doc){
                           return("")
                         })
 
-  indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/d", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "(Junior) ", "(Senior) ")
+  indicators <- c("m/w/x", "m/f/d", "f/m/d", "w/m/d", "m/w/d", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "(Junior) ", "(Senior) ")
   add_indicators <- match_strings(target_strings = indicators, html_text = html_text)
   indeed_jobs <- approx_match_strings(target_strings = job_titles, html_text = html_text)
   apply_button <- has_apply_button(doc)

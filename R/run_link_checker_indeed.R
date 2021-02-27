@@ -47,9 +47,10 @@ names(indeed_results) %>% .[length(.)] %>%
 # 41 ses fails
 # 42 weird
 
-nr <- 43
-for(nr in seq(urls)[4:3672]){
+nr <- 48
+for(nr in seq(urls)[47:3672]){
   url <- urls[nr]
+  url
   indeed_results[[url]] <- tryCatch(
     find_job_page(url, ses, use_phantom = TRUE),
     error = function(e){
@@ -75,7 +76,10 @@ for(nr in seq(urls)[4:3672]){
 # [1] "https://www.adiro.eu/"
 # [1] "https://www.adiro.eu/jobs/"
 
-
+nr <- 51
+url <- urls[[nr]]
+url
+indeed_results[[url]]
 
 
 # which(indeed_results %>% sapply(typeof) == "list")
