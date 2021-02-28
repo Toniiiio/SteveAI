@@ -336,7 +336,9 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   iframe_links <- data.frame(href = iframe_links_raw, text = rep("iframe", length(iframe_links_raw)))
 
-  parsed_links[iter_nr, ] <- target_link
+  parsed_links[iter_nr, ]$href <- target_link$href
+  parsed_links[iter_nr, ]$text <- target_link$text
+
   links <- rbind(iframe_links, links, all_links[[id]]) %>%
     filter_links(domain = domain, parsed_links = parsed_links)
   links <- links[!duplicated(links$href), ]
@@ -364,22 +366,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
 }
 
-#remDr <- start_selenium(port_nr = 4459)
-#url <- "https://www.avitea.de/" --> selenium dies
-#url <- "https://www.daimler.de/"
-#url <- "https://www.jobs.abbott/us/en/search-results"
-remDr = NULL
-ses <<- start_phantom()
-use_selenium = FALSE
-use_phantom = TRUE
-find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
-
-  iter_nr <- 0
-  max_iter <- 10
-  parsed_links <- data.frame(href = character(max_iter), text = character(max_iter))
-  links_per_level <- list()
-  docs_per_level <- list()
-
+create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter) {
   if(use_selenium){
     out <- get_doc_selenium(url, remDr)
     doc <- out$doc
@@ -410,28 +397,49 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   if(!dim(links)[1]) stop("No links found")
   links %>% grepl(pattern = "jobs") %>% sum
   head(links)
-  iter_nr <- 0
+
   #links_per_level[1] <- url
 
-  html_texts <- list()
+
   links <- filter_links(links = links, domain = domain, parsed_links = parsed_links)
 
   # catch document and all links
+  html_texts <- list()
   all_links <- list()
   all_docs <- list()
   matches <- list()
+  counts <- rep(NA, max_iter)
 
   links <- sort_links(links)
   links %>% head
 
-  #links[1] %>% browseURL()
-  counts <- rep(NA, max_iter)
-
-  link_meta <- list(
+  list(
     links = links, all_docs = all_docs, all_links = all_links,
     parsed_links = parsed_links,
     html_texts = html_texts, matches = matches, counts = counts
   )
+}
+
+#remDr <- start_selenium(port_nr = 4459)
+#url <- "https://www.avitea.de/" --> selenium dies
+#url <- "https://www.daimler.de/"
+#url <- "https://www.jobs.abbott/us/en/search-results"
+remDr = NULL
+ses <<- start_phantom()
+use_selenium = FALSE
+use_phantom = TRUE
+find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
+
+  iter_nr <- 0
+  max_iter <- 15
+  parsed_links <- data.frame(href = character(max_iter), text = character(max_iter))
+  links_per_level <- list()
+  docs_per_level <- list()
+
+
+  #links[1] %>% browseURL()
+
+  link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter)
 
 
   while(iter_nr < max_iter){
@@ -443,6 +451,7 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
       link_meta$links <- link_meta$links[-1, ]
       next
     }
+
     link_meta <- parse_link(
       target_link = target_link,
       iter_nr = iter_nr, link_meta = link_meta,
@@ -456,17 +465,20 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   winner <- which(max(link_meta$counts, na.rm = TRUE) == link_meta$counts)[1]
   # targets <- parsed_links[max(counts, na.rm = TRUE) == counts]
   # targets[1] %>% browseURL()
+
   link_meta$counts
   link_meta$parsed_links$href
-  link_meta$parsed_links$href[6]
+  link_meta$parsed_links$href[winner]
+  link_meta$parsed_links$href[winner] %>% browseURL()
 
-  return(
+
+    return(
     list(
-      doc = as.character(all_docs[[winner]]),
-      all_docs = lapply(all_docs, as.character),
-      counts = counts,
-      parsed_links = parsed_links,
-      matches = matches,
+      doc = as.character(link_meta$all_docs[[winner]]),
+      all_docs = lapply(link_meta$all_docs, as.character),
+      counts = link_meta$counts,
+      parsed_links = link_meta$parsed_links,
+      matches = link_meta$matches,
       winner = winner
     )
   )

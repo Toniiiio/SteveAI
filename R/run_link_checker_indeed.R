@@ -47,8 +47,10 @@ names(indeed_results) %>% .[length(.)] %>%
 # 41 ses fails
 # 42 weird
 
-nr <- 48
-for(nr in seq(urls)[47:3672]){
+urls %>% grepl(pattern = "centogene") %>% which
+
+nr <- 423
+for(nr in seq(urls)[118:3672]){
   url <- urls[nr]
   url
   indeed_results[[url]] <- tryCatch(
@@ -59,7 +61,7 @@ for(nr in seq(urls)[47:3672]){
       return("")
     }
   )
-   save(indeed_results, file = "data/job_page_candidates_indeed.RData")
+  save(indeed_results, file = "data/job_page_candidates_indeed.RData")
 }
 
 #paypal, facebook, instagram, youtube, cookiebot.com
@@ -76,10 +78,17 @@ for(nr in seq(urls)[47:3672]){
 # [1] "https://www.adiro.eu/"
 # [1] "https://www.adiro.eu/jobs/"
 
-nr <- 51
+nr <- 58
 url <- urls[[nr]]
 url
 indeed_results[[url]]
 
 
 # which(indeed_results %>% sapply(typeof) == "list")
+
+
+# [1] "https://www.irishjobs.ie/myprofile/saved-jobs"
+# [1] "https://www.irishjobs.ie/Jobs/IT"
+# [1] "https://www.irishjobs.ie/All-Jobs"
+# [1] "https://www.irishjobs.ie/All-Jobs?Recruiter=Agency"
+# [1] "https://www.irishjobs.ie/Jobs/Retail-General-Manager-Job-8563065.aspx"

@@ -77,8 +77,8 @@ sort_links <- function(links){
                     "Ergebnisse 1 – 25 von", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ")
 
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "current-vacancies", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
-  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com")
+  prioritize <- c("stellenmarkt", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
+  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube.com", "cookiebot.com", "google.com", "youtube-nocookie")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%

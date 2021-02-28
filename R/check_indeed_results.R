@@ -35,14 +35,24 @@ dont_run <- function(){
   # 259 wrong turn to paypal
   # 262 find  (m / w/d)
   # 264: find better path?
-  nr <- 3
 
-  xx <- indeed_results[[nr]]
-  xx$all_docs[1]
+
+  # button: 103
+  # mehr anz: 106
+  # 76, 79, 105, 106, 107,
+
+  nr <- 105
+
+  url <- urls[nr]
+  url
+  xx <- indeed_results[[url]]
   xx$counts
+  xx$matches
   xx$parsed_links$href
   xx$parsed_links$href[xx$winner]
   xx$parsed_links$href[xx$winner] %>% browseURL()
+
+  xx$all_docs[[1]] %>% SteveAI::showHtmlPage()
 
   doc <- xx$doc %>% xml2::read_html()
   target_text <- xx$matches[xx$winner] %>%
