@@ -209,10 +209,10 @@ get_doc_phantom <- function(url, ses){
   )
 }
 
-start_phantom <- function(){
-  pjs <- webdriver::run_phantomjs()
-  webdriver::Session$new(port = pjs$port)
-}
+# start_phantom <- function(){
+# pjs <- webdriver::run_phantomjs()
+# ses <- webdriver::Session$new(port = pjs$port)
+# }
 
 #ses <- start_phantom()
 
@@ -247,6 +247,15 @@ follow_link <- function(link, use_selenium = FALSE){
   }else{
     doc <- get_doc(link$href)
   }
+}
+
+generate_button_xpath <- function(){
+  texts <- c('Ergebnisse anzeigen', 'Find your job', 'Jobsuche', 'Find jobs', 'search', 'Jobs Anzeigen', 'Stellen suchen', 'Search', 'Stellenangebote suchen', 'Jobs anzeigen')
+  tagnames_raw <- c("button", "input")
+  tagnames <- paste0("(", paste0("self::", tagnames_raw, collapse = " or "), ")")
+
+  xp_text <- paste0(paste(paste0("./parent::*//*[contains(text(), '", texts,"')]"), collapse = " or "))
+  paste0("//*", "[", tagnames, " and (", xp_text, ")]")
 }
 
 parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, use_phantom = TRUE, ses = NULL, remDr = NULL){
@@ -305,7 +314,17 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
   }else{
 
     all_links[[id]] <- data.frame(href = character(), text = character())
+    message("No content")
     warning("No content")
+
+    return(
+      list(
+        links = links[-1, ], all_docs = all_docs, all_links = all_links,
+        parsed_links = parsed_links,
+        html_texts = html_texts, matches = matches, counts = counts
+      )
+    )
+
 
   }
 
@@ -355,6 +374,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
 
+  links <- check_for_button(links)
 
   return(
     list(
@@ -365,6 +385,61 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
   )
 
 }
+
+check_for_button <- function(links){
+
+  url_before <- ses$getUrl()
+  doc <- ses$findElement(xpath = "/*")
+  doc_len_before <- doc$getAttribute("innerHTML") %>% nchar
+
+  xp <- generate_button_xpath()
+  buttons <- ses$findElements(xpath = xp)
+  for(nr in seq(buttons)){
+    tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
+  }
+
+  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or @title = 'Search Jobs']"
+  inputs <- ses$findElements(xpath = input_xpath)
+
+  # todo: finish
+  button_xpath <- "//button[./parent::*//*[contains(text(), 'GO')]]"
+  buttons <- ses$findElements(xpath = input_xpath)
+
+
+  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs')]"
+  is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
+  is_job_related
+
+  if(is_job_related){
+    for(nr in seq(inputs)){
+      # message("Found and trying a relevant input")
+      tryCatch(inputs[[nr]]$click(), error = function(e) message(e))
+    }
+  }
+
+
+  url_after <- ses$getUrl()
+  doc <- ses$findElement(xpath = "/*")
+  doc_len_after <- doc$getAttribute("innerHTML") %>% nchar
+
+  button_relevant <- url_after != url_before | doc_len_before != doc_len_after
+
+  if(button_relevant){
+    message("Found a relevant button")
+    links <- rbind(
+      data.frame(
+        href = url_after,
+        text = "Caused by SteveAI button click"
+      ),
+      links
+    )
+  }
+
+  return(links)
+
+}
+
+
 
 create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter) {
   if(use_selenium){
@@ -423,24 +498,26 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
 #remDr <- start_selenium(port_nr = 4459)
 #url <- "https://www.avitea.de/" --> selenium dies
 #url <- "https://www.daimler.de/"
-#url <- "https://www.jobs.abbott/us/en/search-results"
+#url <- "https://www.capita.com/"
+url <- "https://www.amazon.com/"
 remDr = NULL
-ses <<- start_phantom()
+# ses <<- start_phantom()
 use_selenium = FALSE
 use_phantom = TRUE
 find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
   iter_nr <- 0
-  max_iter <- 15
+  max_iter <- 12
   parsed_links <- data.frame(href = character(max_iter), text = character(max_iter))
   links_per_level <- list()
   docs_per_level <- list()
 
 
   #links[1] %>% browseURL()
-
+  link <- url
+  link
   link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter)
-
+  link_meta$links %>% head
 
   while(iter_nr < max_iter){
 
@@ -456,11 +533,13 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
       target_link = target_link,
       iter_nr = iter_nr, link_meta = link_meta,
       use_selenium = FALSE, use_phantom = TRUE,
-      remDr = NULL
+      remDr = NULL, ses = ses
     )
 
-  }
+    link_meta$links %>% head
+    grepl(link_meta$links$href, pattern = "career.centogene.com")
 
+  }
 
   winner <- which(max(link_meta$counts, na.rm = TRUE) == link_meta$counts)[1]
   # targets <- parsed_links[max(counts, na.rm = TRUE) == counts]
@@ -469,10 +548,11 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   link_meta$counts
   link_meta$parsed_links$href
   link_meta$parsed_links$href[winner]
-  link_meta$parsed_links$href[winner] %>% browseURL()
+  link_meta$parsed_links$href[4] %>% browseURL()
+  link_meta$all_docs[[winner]] %>% SteveAI::showHtmlPage()
+  link_meta$all_docs[[winner]] %>% toString %>% grepl(pattern = "Elektro")
 
-
-    return(
+  return(
     list(
       doc = as.character(link_meta$all_docs[[winner]]),
       all_docs = lapply(link_meta$all_docs, as.character),

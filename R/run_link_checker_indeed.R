@@ -24,7 +24,7 @@ source("R/link_checker.R")
 load("data/comp_urls_indeed.RData")
 load("data/job_page_candidates_indeed.RData")
 urls <- unlist(comp_urls)
-ses <<- start_phantom()
+#ses <<- start_phantom()
 
 # if(!exists("indeed_reuslts")){
 #   indeed_results <- list()
@@ -47,10 +47,16 @@ names(indeed_results) %>% .[length(.)] %>%
 # 41 ses fails
 # 42 weird
 
-urls %>% grepl(pattern = "centogene") %>% which
+d <- urls %>% grepl(pattern = "axa") %>% which
+d
+d %>% urls[.]
 
-nr <- 423
-for(nr in seq(urls)[118:3672]){
+pjs <<- webdriver::run_phantomjs()
+ses <<- webdriver::Session$new(port = pjs$port)
+
+
+nr <- 345
+for(nr in seq(urls)[346:3672]){
   url <- urls[nr]
   url
   indeed_results[[url]] <- tryCatch(

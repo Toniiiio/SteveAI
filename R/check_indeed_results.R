@@ -14,9 +14,6 @@ dont_run <- function(){
   #   input = "vistarundle1!!!"
   # )
 
-
-
-
   source("R/is_job_offer_page.R")
   source("R/handle_links.R")
   source("R/link_checker.R")
@@ -25,6 +22,10 @@ dont_run <- function(){
   urls <- unlist(comp_urls)
 
   source("R/rvestFunctions.R")
+
+  pjs <<- webdriver::run_phantomjs()
+  ses <<- webdriver::Session$new(port = pjs$port)
+
 
   w <- (sapply(indeed_results, typeof, USE.NAMES = FALSE) == "list") %>%
     unname %>%
@@ -41,33 +42,53 @@ dont_run <- function(){
   # mehr anz: 106
   # 76, 79, 105, 106, 107,
 
-  nr <- 105
+  nr <- 1
 
   url <- urls[nr]
   url
-  xx <- indeed_results[[url]]
+
+
+  sd <- sapply(indeed_results, typeof)
+  xxx <- which(sd == "list")
+  nr <- xxx[1]
+
+  xx <- indeed_results[[nr]]
+  #   xx <- indeed_results[[url]]
   xx$counts
-  xx$matches
+  #xx$matches
   xx$parsed_links$href
   xx$parsed_links$href[xx$winner]
-  xx$parsed_links$href[xx$winner] %>% browseURL()
-
-  xx$all_docs[[1]] %>% SteveAI::showHtmlPage()
+  #xx$parsed_links$href[xx$winner] %>% browseURL()
 
   doc <- xx$doc %>% xml2::read_html()
-  target_text <- xx$matches[xx$winner] %>%
-    lapply(unname) %>%
+  doc %>% SteveAI::showHtmlPage()
+  target_text <- xx$matches[[xx$winner]] %>%
+    {.[names(.) != "apply_button"]} %>%
+    unname %>%
     unlist(recursive = TRUE) %>%
     {names(.)[which.max(as.numeric(.))]}
+  # target_text <- "junior"
   target_text
 
-  doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
-    html_text()
+  # doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
+  #   html_text()
 
-  doc %>% SteveAI::showHtmlPage()
-  xpath <- getXPathByText(text = target_text, doc = doc, add_class = TRUE, )
+  #doc %>% SteveAI::showHtmlPage()
+  xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
   xpath
-  html_nodes(x = doc, xpath = xpath) %>% html_text()
+  #xpath <- "/html/body[@class=\"widget-page\"]/div[@class=\"page-wrapper\"]/div[@class=\"container\"]/div[@class=\"body-wrapper\"]/div[@class=\"jobs-widget-page\"]/div/div[@class=\"job-search-panel\"]/div[@class=\"job-search\"]/div[@class=\"searchBoxComplete\"]/div[@class=\"job-search-results\"]/div/div[@class=\"job-search-result-panel\"]/section[@class=\"results\"]/form/div[@class=\"matchContainer\"]/div[@class=\"outputContainer\"]/div/div[@class=\"matchValue title\"]/a"
+
+  source("R/configure_xpath.R")
+  url <- xx$parsed_links$href[xx$winner]
+  out <- configure_xpath(xpath, doc, ses, url)
+  out
+
+  required_len <- 2
+
+  tags_pure <- out$tags_pure
+  classes <- out$classes
+  add_classes(required_len, out$tags_pure, out$classes, doc)
+  out$require_js
 
   indeed_results[[nr]]$result <- "need_button"
   indeed_results[[nr]]$result <- "works incomplete xpath"

@@ -9,7 +9,7 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
   links$href <- sapply(links$href, equalize_links)
   # some links are reported like: "//www.saturn.de/de/category/_teegeräte-476120.html".
-  needs_start <- substring(text = links$href, first = 1, last = 1) == "/" &
+  needs_start <- substring(text = links$href, first = 1, last = 1) %in% c("/", "?") &
     !grepl(x = links$href, pattern = "http") &
     !grepl(x = links$href, pattern = "www.", fixed = TRUE)
   needs_start[is.na(needs_start)] <- FALSE
@@ -73,12 +73,13 @@ sort_links <- function(links){
   }
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
   links$text <- tolower(links$text)
-  direct_match <- c(paste(c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)"), collapse = "|"),
-                    "Ergebnisse 1 – 25 von", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ")
+  direct_match <- paste(c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)", "successfactors", "all open positions",
+                    "Ergebnisse 1 – 25 von", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ", "myworkdayjobs"), collapse = "|")
 
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ")
-  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube.com", "cookiebot.com", "google.com", "youtube-nocookie")
+  prioritize <- c("stellenmarkt", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "career", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ", "all open positions")
+  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube", "cookiebot.com", "google.com", "youtube-nocookie", "twitter", "linkedin", "signup", "request-password", "checkpoint", "signup", "wa.me", "vimeo",
+                     "google.de/maps", "google.de/intl")
 
    # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%
@@ -112,6 +113,7 @@ sort_links <- function(links){
 
   iframe <- which(links$text == "iframe")
   iframe <- setdiff(iframe, last)
+  first <- setdiff(first, last)
 
   order <- c(iframe, direct, first, setdiff(seq(links$href), c(first, last, direct)),last) %>%
     unique
