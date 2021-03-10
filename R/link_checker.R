@@ -406,7 +406,7 @@ check_for_button <- function(links){
   buttons <- ses$findElements(xpath = input_xpath)
 
 
-  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs')]"
+  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs')]"
   is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
   is_job_related
 

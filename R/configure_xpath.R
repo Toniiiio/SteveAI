@@ -54,6 +54,13 @@ add_classes <- function(required_len, tags_pure, classes, doc){
     elems <- doc %>% rvest::html_nodes(xpath = xps[nr]) %>% html_text()
     lens[nr] <- elems %>% length
   }
-  xps[which(lens == required_len)]
+  diff <- (lens - required_len)/required_len
+  winner <- which(diff == 0)
+  if(!length(winner)){
+    warning("Did not find exact match")
+    winner <- which(diff < 0.1)
+  }
+
+  xps[winner]
 
 }

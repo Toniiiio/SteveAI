@@ -54,9 +54,14 @@ d %>% urls[.]
 pjs <<- webdriver::run_phantomjs()
 ses <<- webdriver::Session$new(port = pjs$port)
 
+# element not visible 415, 416
 
-nr <- 345
-for(nr in seq(urls)[346:3672]){
+#424: Error
+#429: MyWorkdayjobs
+# 431: no jobs or doesnt find?
+
+nr <- 439
+for(nr in seq(urls)[440:3672]){
   url <- urls[nr]
   url
   indeed_results[[url]] <- tryCatch(

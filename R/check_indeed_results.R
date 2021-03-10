@@ -50,23 +50,22 @@ dont_run <- function(){
 
   sd <- sapply(indeed_results, typeof)
   xxx <- which(sd == "list")
-  nr <- xxx[1]
+
+  # 13 problem?
+  nr <- xxx[25]
 
   xx <- indeed_results[[nr]]
   #   xx <- indeed_results[[url]]
   xx$counts
-  #xx$matches
+  #xx$matches[[3]]
   xx$parsed_links$href
   xx$parsed_links$href[xx$winner]
-  #xx$parsed_links$href[xx$winner] %>% browseURL()
+  #xx$parsed_links$href[2]
+  #xx$parsed_links$href[1] %>% browseURL()
 
   doc <- xx$doc %>% xml2::read_html()
   doc %>% SteveAI::showHtmlPage()
-  target_text <- xx$matches[[xx$winner]] %>%
-    {.[names(.) != "apply_button"]} %>%
-    unname %>%
-    unlist(recursive = TRUE) %>%
-    {names(.)[which.max(as.numeric(.))]}
+  target_text <- get_target_text(xx)
   # target_text <- "junior"
   target_text
 
@@ -83,7 +82,7 @@ dont_run <- function(){
   out <- configure_xpath(xpath, doc, ses, url)
   out
 
-  required_len <- 2
+  required_len <- 13
 
   tags_pure <- out$tags_pure
   classes <- out$classes
@@ -105,6 +104,19 @@ dont_run <- function(){
   # xml2::read_xml("doc.xml")
 
 }
+
+get_target_text <- function(xx){
+
+  rr <- xx$matches[[xx$winner]] %>%
+    {.[names(.) != "apply_button"]} %>%
+    unname %>%
+    unlist(recursive = TRUE)
+
+  weights <- c("m/w/d" = 1, "m/w" = 0.8, "vollzeit" = 0.2)
+  (as.numeric(rr)*weights) %>%
+    {names(.)[which.max(.)]}
+}
+
 
 #(M / F / D)
 # (m / f / d)

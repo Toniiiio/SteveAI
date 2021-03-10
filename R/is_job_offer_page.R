@@ -80,7 +80,7 @@ has_indeed_jobs <- function(job_titles, html_text){
 }
 
 has_add_indicators <- function(html_text){
-  indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/d", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "junior", "senior")
+  indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/d", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "junior", "senior", "Mitarbeiter/In", "Assistent*in", "Referent*in", "Stellenangebot", "Bewerbungsfrist")
   indicator_match <- sapply(indicators,stringr::str_count, string = tolower(html_text))
   indicator_match %>% sum
 }
@@ -97,7 +97,7 @@ target_indicator_count <- function(job_titles, doc){
                         })
 
   indicators <- c("m/w/x", "m/f/d", "f/m/d", "w/m/d", "m/w/d", "m/w", "d/f/m", "stelle anzeigen", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "junior", "senior",
-                  "Technical Designer", "CRM Manager", "HR Advisor", "Sales Representative", "Process Engineer")
+                  "Technical Designer", "CRM Manager", "HR Advisor", "Sales Representative", "Process Engineer", "Mitarbeiter/In", "Assistent*in", "Referent*in", "Stellenangebot", "Bewerbungsfrist")
   add_indicators <- match_strings(target_strings = indicators, html_text = html_text)
   indeed_jobs <- approx_match_strings(target_strings = job_titles, html_text = html_text)
   apply_button <- has_apply_button(doc)
