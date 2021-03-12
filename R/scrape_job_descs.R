@@ -70,9 +70,9 @@ link_to_article <- function(links){
 
 
 
-library(glue)
-library(magrittr)
-library(rvest)
+# library(glue)
+# library(magrittr)
+# library(rvest)
 
 scrape_job_descs <- function(){
 

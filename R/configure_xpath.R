@@ -4,15 +4,21 @@ configure_xpath <- function(xpath, doc, ses, url) {
   xml2_results <- full_results <- html_nodes(x = url %>% xml2::read_html(), xpath = xpath) %>% html_text()
   require_js <- !identical(phantom_results, xml2_results)
 
-  tags_with_class <- xpath %>%
+  classes <- c()
+  node <- html_nodes(doc, xpath = xpath)[1]
+  name <- "x"
+  while(name != "html"){
+    classes <- c(classes, node %>% html_attr(name = "class"))
+    node %<>% html_nodes(xpath = "..")
+    name <- html_name(node)
+  }
+  classes <- c(classes, node %>% html_attr(name = "class")) %>% rev
+  has_classes <- classes %>% is.na %>% magrittr::not()
+
+  tags_pure <- xpath %>% gsub(pattern = "\\[@class=\"([^]]+)\"\\]", replacement = "") %>%
     strsplit(split = "/") %>%
     .[[1]] %>%
     .[-1]
-
-  tags_pure <- sapply(tags_with_class, function(tag) tag %>% strsplit(split = "[[]") %>% .[[1]] %>% .[1]) %>% unname
-
-  has_class <- tags_with_class %>%
-    grepl(pattern = "@class")
 
   xp <- tags_pure %>%
     paste(collapse = "/") %>%
@@ -26,7 +32,7 @@ configure_xpath <- function(xpath, doc, ses, url) {
   elem_limit <- doc %>% rvest::html_nodes(xpath = xpath) %>% html_text()
   elem_full <- doc %>% rvest::html_nodes(xpath = xp) %>% html_text()
 
-  classes <- stringr::str_match(tags_with_class, 'class=\"(.*?)\"')[, 2]
+
 
   out <- list(
     elem_limit = elem_limit,

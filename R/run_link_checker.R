@@ -90,14 +90,14 @@ url <- "https://www.airbnb.com"
 # search button
 url <- "https://www.microsoft.com"
 
-xx <- find_job_page(url, remDr, TRUE)
+# xx <- find_job_page(url, remDr, TRUE)
 
 # xx <- find_job_page(url)
 # #
-xx$counts
-xx$parsed_links$href
-xx$parsed_links$href[xx$winner]
-xx$parsed_links$href[xx$winner] %>% browseURL()
+# xx$counts
+# xx$parsed_links$href
+# xx$parsed_links$href[xx$winner]
+# xx$parsed_links$href[xx$winner] %>% browseURL()
 
 # professionals
 # opportunities

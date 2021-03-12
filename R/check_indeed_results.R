@@ -52,7 +52,9 @@ dont_run <- function(){
   xxx <- which(sd == "list")
 
   # 13 problem?
-  nr <- xxx[25]
+  # 31 false positive?
+  # 32 filters not set - need german locale?
+  nr <- xxx[34]
 
   xx <- indeed_results[[nr]]
   #   xx <- indeed_results[[url]]
@@ -61,12 +63,12 @@ dont_run <- function(){
   xx$parsed_links$href
   xx$parsed_links$href[xx$winner]
   #xx$parsed_links$href[2]
-  #xx$parsed_links$href[1] %>% browseURL()
+  #xx$parsed_links$href[xx$winner] %>% browseURL()
 
   doc <- xx$doc %>% xml2::read_html()
   doc %>% SteveAI::showHtmlPage()
   target_text <- get_target_text(xx)
-  # target_text <- "junior"
+  # target_text <- "Kundenbetreuer (W/m/d)"
   target_text
 
   # doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
@@ -75,7 +77,7 @@ dont_run <- function(){
   #doc %>% SteveAI::showHtmlPage()
   xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
   xpath
-  #xpath <- "/html/body[@class=\"widget-page\"]/div[@class=\"page-wrapper\"]/div[@class=\"container\"]/div[@class=\"body-wrapper\"]/div[@class=\"jobs-widget-page\"]/div/div[@class=\"job-search-panel\"]/div[@class=\"job-search\"]/div[@class=\"searchBoxComplete\"]/div[@class=\"job-search-results\"]/div/div[@class=\"job-search-result-panel\"]/section[@class=\"results\"]/form/div[@class=\"matchContainer\"]/div[@class=\"outputContainer\"]/div/div[@class=\"matchValue title\"]/a"
+
 
   source("R/configure_xpath.R")
   url <- xx$parsed_links$href[xx$winner]
@@ -112,8 +114,9 @@ get_target_text <- function(xx){
     unname %>%
     unlist(recursive = TRUE)
 
-  weights <- c("m/w/d" = 1, "m/w" = 0.8, "vollzeit" = 0.2)
-  (as.numeric(rr)*weights) %>%
+  #weights <- c("m/w/d" = 5, "m/w" = 4, "vollzeit" = 0.1) # has to have the same lengths
+  rr[names(rr) %in% c("m/w/d",  "w/m/d")] %<>% {as.numeric(.)*5}
+  rr %>%
     {names(.)[which.max(.)]}
 }
 

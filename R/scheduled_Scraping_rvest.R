@@ -337,14 +337,14 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 #setwd("C:/Users/user1/Documents/TMP/raspi")
 # load(glue("scraper_rvest.RData"))
 
-start <- Sys.time()
-
-
-# SteveAI_dir <- "/home/pi/sivis/scrape"
-SteveAI_dir <- "~"
-setwd(SteveAI_dir)
-# load(file.path(SteveAI_dir, "scraper_rvest.RData"))
-logger_name <- "sivis"
+# start <- Sys.time()
+#
+#
+# # SteveAI_dir <- "/home/pi/sivis/scrape"
+# SteveAI_dir <- "~"
+# setwd(SteveAI_dir)
+# # load(file.path(SteveAI_dir, "scraper_rvest.RData"))
+# logger_name <- "sivis"
 
 if(!dir.exists("dataRvest")){
 
@@ -352,10 +352,10 @@ if(!dir.exists("dataRvest")){
 
 }
 
-date_today <- Sys.Date()
-file_path <- file.path(getwd(), paste0("rvest_single_", date_today, ".log"))
-
-flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), logger= logger_name)
+# date_today <- Sys.Date()
+# file_path <- file.path(getwd(), paste0("rvest_single_", date_today, ".log"))
+#
+# flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), logger= logger_name)
 
 # load("~/TMP/raspi/scraper.RData")
 # scrapers <- scraper

@@ -5,108 +5,6 @@
 # start in der anderen dom?ne
 # https://recruitingapp-5118.de.umantis.com/Vacancies/2972/Description/1?lang=ger&DesignID=00
 
-# start with a url
-# url <- "https://www.fida.de/jobs/stellenangebote/"
-# target <- "werkstudent bereich personal"
-# url <- "https://careers.cid.com/de"
-# target <- "Informatiker (m/w)"
-
-# url <- "https://recalm.com/"
-# target <- "Praktikum Entrepreneurship (m/w/d)"
-
-url <- "https://www.deutsche-leasing.com/de"
-target_url <- "https://www.deutsche-leasing.com/de/unternehmen/karriere/unsere-stellenangebote"
-target <- "Strategischer IT-Eink?ufer (m/w/d)"
-
-target_url <- "https://www.dzbank.de/content/dzbank_de/de/home/unser_profil/karriere/berufserfahrene.html"
-url <- "https://www.dzbank.de/content/dzbank_de/de/home.html"
-target <- "Senior Revisor IT"
-
-target <- "DATA INTEGRATION ENGINEER (M/W/D)"
-target_url <- "https://veact-jobs.personio.de/"
-url <- "https://veact-jobs.personio.de/job/80470"
-
-
-target_url <- "https://www.asklepios.com/beruf/stellenangebote-und-bewerbung/alle-stellenangebote/"
-url <- "https://www.asklepios.com/konzern/"
-target <- "Ergotherapeuten (w/m/d)"
-
-# yields javascript
-url <- "https://www.dzbank.de"
-
-#worls now
-url <- "https://www.adecco.de"
-
-# works
-url <- "http://www.amadeus-fire.de"
-
-# keine relevante seite
-url <- "https://dasbesteteam.com/"
-
-url <- "https://www.arvato.co.uk"
-
-url <- "https://karriere.aldi-sued.de/"
-
-url <- "https://www.aldi-nord.de/"
-
-url <- "https://www.lidl.de/"
-
-url <- "https://www.uipath.com/de/"
-
-# JS
-url <- "https://www.automationanywhere.com/de/"
-
-url <- "https://www.blueprism.com/de/"
-
-# works with a lot of warnings
-url <- "https://www.hornbach.de"
-
-# hash links
-url <- "https://www.obi.de"
-# false positive match
-url <- "https://www.obi.de/karriere/"
-
-
-# #link within --> Selenium
-url <- "https://www.gamestop.de/"
-
-url <- "https://www.fida.de/"
-
-#works now
-url <- "https://www.lunchnow.com"
-
-#works
-url <- "https://www.implico.com"
-
-url <- "https://www.sportplatz-media.com"
-
-
-#works
-url <- "https://www.wisag.de"
-
-# very strange links
-url <- "https://www.mytoys.de/"
-
-url <- "https://www.wwf.de/"
-url <- "https://www.dzbank.de/"
-
-# works with javascript
-url <- "https://www.quantexa.com"
-
-# selenium javascript - fails if try to get html - with permission denied
-url <- "https://www.aboutyou.de/"
-
-
-# txt <- target_url %>%
-#   read_html %>% html_text %>%
-#   tolower %>%
-#   gsub(pattern = "\n|\t", replacement = " ")
-# #txt %>% mypkg2:::show_html_page()
-# has_match <- txt %>% aregexec(pattern = tolower(target), max.distance = 0.1) %>%
-#   unlist %>% "!="(-1) %>% sum
-# has_match
-
-
 start_selenium <- function(port_nr = 4452){
 
   #library(RSelenium)
@@ -221,11 +119,11 @@ get_doc_phantom <- function(url, ses){
 get_doc <- function(url){
   url %>% xml2::read_html()
 }
-
-library(magrittr)
-library(rvest)
-library(xml2)
-use_selenium = TRUE
+#
+# library(magrittr)
+# library(rvest)
+# library(xml2)
+# use_selenium = TRUE
 
 follow_link <- function(link, use_selenium = FALSE){
 
@@ -499,11 +397,11 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
 #url <- "https://www.avitea.de/" --> selenium dies
 #url <- "https://www.daimler.de/"
 #url <- "https://www.capita.com/"
-url <- "https://www.amazon.com/"
-remDr = NULL
-# ses <<- start_phantom()
-use_selenium = FALSE
-use_phantom = TRUE
+# url <- "https://www.amazon.com/"
+# remDr = NULL
+# # ses <<- start_phantom()
+# use_selenium = FALSE
+# use_phantom = TRUE
 find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
   iter_nr <- 0
@@ -606,12 +504,3 @@ url <- "https://ayka-therapie.de/"
 # falscher abbieger zu linkedin - erst bei ferienjbos
 url <- "https://www.daimler.de"
 # https://www.daimler.de/karriere/jobsuche/"
-
-
-# url <- "https://www.tesa.de"
-# remDr <- start_selenium()
-# xx <- find_job_page(url, remDr, use_selenium = TRUE)
-# xx$winner
-# xx$counts
-# xx$parsed_links$href[xx$winner]
-# xx$parsed_links$href[xx$winner] %>% browseURL()

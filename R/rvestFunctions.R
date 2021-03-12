@@ -41,8 +41,9 @@ getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = N
   text %<>% gsub(pattern = "\n|\r", replacement = "")
   xpath <- paste0("//*[text()[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ', 'abcdefghijklmnopqrstuvwxyz'), '", text, "')]]")
   tag <- doc %>% html_nodes(xpath = xpath)
-  xx <- "//*[contains(text(), 'ber uns')]"
-  doc %>% html_nodes(xpath = xx)
+  tag
+  winner <- tag %>% html_name() %>% table(.) %>% {names(.)[which.max(.)]}
+  tag <- tag[which(html_name(tag) == winner)[1]]
 
   tagName <- ""
   tags <- c()
