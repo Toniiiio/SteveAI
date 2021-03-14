@@ -23,13 +23,15 @@ dont_run <- function(){
   source("R/is_job_offer_page.R")
   source("R/handle_links.R")
   source("R/link_checker.R")
+  source("R/target_text.R")
   load("data/comp_urls_indeed.RData")
   load("data/job_page_candidates_indeed.RData")
   urls <- unlist(comp_urls)
   #ses <<- start_phantom()
 
+
   # if(!exists("indeed_reuslts")){
-  #   indeed_results <- list()
+  #   indeed_results2 <- list()
   # }
 
 
@@ -62,11 +64,12 @@ dont_run <- function(){
   #429: MyWorkdayjobs
   # 431: no jobs or doesnt find?
 
-  nr <- 439
-  for(nr in seq(urls)[440:3672]){
+  url <- "https://www.wirpflegen.de/"
+  nr <- 575
+  for(nr in seq(urls)[585:3672]){
     url <- urls[nr]
     url
-    indeed_results[[url]] <- tryCatch(
+    indeed_results2[[url]] <- tryCatch(
       find_job_page(url, ses, use_phantom = TRUE),
       error = function(e){
         print("Call to find_job_page failed with:")
@@ -74,7 +77,7 @@ dont_run <- function(){
         return("")
       }
     )
-    save(indeed_results, file = "data/job_page_candidates_indeed.RData")
+    save(indeed_results2, file = "data/job_page_candidates_indeed.RData")
   }
 
   #paypal, facebook, instagram, youtube, cookiebot.com

@@ -296,21 +296,28 @@ check_for_button <- function(links){
     tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
   }
 
-  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or @title = 'Search Jobs']"
-  inputs <- ses$findElements(xpath = input_xpath)
+  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or @value = 'Search' or @title = 'Search Jobs' or @value='Suche starten']"
+  inputs <- ses$findElements(xpath = "//input")
 
-  # todo: finish
-  button_xpath <- "//button[./parent::*//*[contains(text(), 'GO')]]"
-  buttons <- ses$findElements(xpath = input_xpath)
-
-
-  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs')]"
+  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search')]"
   is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
   is_job_related
 
+
+  # todo: finish
+  #
+  button_xpath <- "//button[./parent::*//*[contains(text(), 'GO')] or @title = 'Search for Jobs']"
+  buttons <- ses$findElements(xpath = button_xpath)
+
+  if(is_job_related){
+    for(nr in seq(buttons)){
+      tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
+    }
+  }
+
   if(is_job_related){
     for(nr in seq(inputs)){
-      # message("Found and trying a relevant input")
+      message("Found and trying a relevant input")
       tryCatch(inputs[[nr]]$click(), error = function(e) message(e))
     }
   }
@@ -337,6 +344,31 @@ check_for_button <- function(links){
 
 }
 
+extract_target_text <- function(parsing_results){
+  doc <- parsing_results$doc %>% xml2::read_html()
+  # doc %>% SteveAI::showHtmlPage()
+  # parsing_results$all_docs[[parsing_results$winner]] %>% SteveAI::showHtmlPage()
+  target_text <- get_target_text(parsing_results)
+  # target_text <- "Kundenbetreuer (W/m/d)"
+  target_text
+
+  # doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
+  #   html_text()
+
+
+
+  #doc %>% SteveAI::showHtmlPage()
+  xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
+  xpath
+
+
+  source("R/configure_xpath.R")
+  url <- parsing_results$parsed_links$href[parsing_results$winner]
+  candidate_meta <- configure_xpath(xpath, doc, ses, url)
+  parsing_results$candidate_meta <- candidate_meta
+  return(parsing_results)
+
+}
 
 
 create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter) {
@@ -435,7 +467,6 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
     )
 
     link_meta$links %>% head
-    grepl(link_meta$links$href, pattern = "career.centogene.com")
 
   }
 
@@ -443,23 +474,25 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   # targets <- parsed_links[max(counts, na.rm = TRUE) == counts]
   # targets[1] %>% browseURL()
 
-  link_meta$counts
-  link_meta$parsed_links$href
-  link_meta$parsed_links$href[winner]
-  link_meta$parsed_links$href[4] %>% browseURL()
-  link_meta$all_docs[[winner]] %>% SteveAI::showHtmlPage()
-  link_meta$all_docs[[winner]] %>% toString %>% grepl(pattern = "Elektro")
+  # link_meta$counts
+  # link_meta$parsed_links$href
+  # link_meta$parsed_links$href[winner]
+  # link_meta$parsed_links$href[4] %>% browseURL()
+  # link_meta$all_docs[[winner]] %>% SteveAI::showHtmlPage()
+  # link_meta$all_docs[[winner]] %>% toString %>% grepl(pattern = "Elektro")
 
-  return(
-    list(
-      doc = as.character(link_meta$all_docs[[winner]]),
-      all_docs = lapply(link_meta$all_docs, as.character),
-      counts = link_meta$counts,
-      parsed_links = link_meta$parsed_links,
-      matches = link_meta$matches,
-      winner = winner
-    )
+  parsing_results <- list(
+    doc = as.character(link_meta$all_docs[[winner]]),
+    all_docs = lapply(link_meta$all_docs, as.character),
+    counts = link_meta$counts,
+    parsed_links = link_meta$parsed_links,
+    matches = link_meta$matches,
+    winner = winner
   )
+
+  out <- extract_target_text(parsing_results)
+  out$candidate_meta
+  return(out)
 }
 
 # cant replicate

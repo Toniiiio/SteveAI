@@ -1,3 +1,31 @@
+dont_run <- function(){
+  library(rvest)
+  library(httr)
+  library(magrittr)
+  library(urltools)
+
+  #nr <- 1
+  xx <- which(lengths(indeed_results2) == 7)
+  nrr <- xx[nr]
+  out <- indeed_results2[[nrr]]
+
+  out$candidate_meta
+  nr <- nr + 1
+
+  out$candidate_meta
+  out$doc %>% showHtmlPage()
+  out$parsed_links$href[out$winner] %>% browseURL()
+  out$candidate_meta$target_text <- "SOFTWARE ENGINEER"
+  out$counts
+  required_len <- 10
+
+  tags_pure <- out$candidate_meta$tags_pure
+  classes <- out$candidate_meta$classes
+  doc <- out$doc %>% xml2::read_html()
+  add_classes(required_len, out$candidate_meta$tags_pure, out$candidate_meta$classes, doc)
+  out$candidate_meta$require_js
+
+}
 
 dont_run <- function(){
   library(rvest)
@@ -15,6 +43,7 @@ dont_run <- function(){
   # )
 
   source("R/is_job_offer_page.R")
+  source("R/target_text.R")
   source("R/handle_links.R")
   source("R/link_checker.R")
   load("data/comp_urls_indeed.RData")
@@ -54,37 +83,39 @@ dont_run <- function(){
   # 13 problem?
   # 31 false positive?
   # 32 filters not set - need german locale?
-  nr <- xxx[34]
+  # 35
+  # 38
+  # 42,43 wrong doc parsed?
+  # 47 retrain: "Assistant Center Manager", "Quality Specialist"
+  # 48 myworkdayjobs
+  # 55 weird geturl behavior
+  # 62 shitty
+  # 64 should work now
+  # 68 taleo wrong locale?
+  #69 murks seite
+  # 72 - senior probleme
+  # 74 myworkdays
+  # 75 doesnt show
+  nr <- xxx[[1]]
 
-  xx <- indeed_results[[nr]]
-  #   xx <- indeed_results[[url]]
-  xx$counts
-  #xx$matches[[3]]
-  xx$parsed_links$href
-  xx$parsed_links$href[xx$winner]
-  #xx$parsed_links$href[2]
-  #xx$parsed_links$href[xx$winner] %>% browseURL()
-
-  doc <- xx$doc %>% xml2::read_html()
-  doc %>% SteveAI::showHtmlPage()
-  target_text <- get_target_text(xx)
-  # target_text <- "Kundenbetreuer (W/m/d)"
-  target_text
-
-  # doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
-  #   html_text()
-
-  #doc %>% SteveAI::showHtmlPage()
-  xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
-  xpath
+  parsing_results <- indeed_results[[nr]]
+  #   parsing_results <- indeed_results[[url]]
+  parsing_results$counts
+  #parsing_results$matches[[3]]
+  parsing_results$parsed_links$href
+  parsing_results$parsed_links$href[parsing_results$winner]
+  #parsing_results$parsed_links$href[2]
+  #parsing_results$parsed_links$href[parsing_results$winner] %>% browseURL()
 
 
-  source("R/configure_xpath.R")
-  url <- xx$parsed_links$href[xx$winner]
-  out <- configure_xpath(xpath, doc, ses, url)
-  out
+  out <- extract_target_text(parsing_results)
+  out$candidate_meta$target_text
+  out$candidate_meta
 
-  required_len <- 13
+  parsing_results$all_docs[parsing_results$winner] %>% SteveAI::showHtmlPage()
+  #parsing_results$parsed_links$href[parsing_results$winner] %>% browseURL()
+
+  required_len <- 4
 
   tags_pure <- out$tags_pure
   classes <- out$classes
@@ -107,18 +138,6 @@ dont_run <- function(){
 
 }
 
-get_target_text <- function(xx){
-
-  rr <- xx$matches[[xx$winner]] %>%
-    {.[names(.) != "apply_button"]} %>%
-    unname %>%
-    unlist(recursive = TRUE)
-
-  #weights <- c("m/w/d" = 5, "m/w" = 4, "vollzeit" = 0.1) # has to have the same lengths
-  rr[names(rr) %in% c("m/w/d",  "w/m/d")] %<>% {as.numeric(.)*5}
-  rr %>%
-    {names(.)[which.max(.)]}
-}
 
 
 #(M / F / D)

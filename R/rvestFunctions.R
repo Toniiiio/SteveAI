@@ -28,7 +28,7 @@ getHTML <- function(getURL, targetString){
 }
 
 # text <- txts[2]
-getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = NULL, byIndex = FALSE, onlyTags = FALSE, clean_up = TRUE){
+getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = NULL, byIndex = FALSE, onlyTags = FALSE, clean_up = TRUE, to_exclude = "option"){
 
   if(is.character(doc)){
 
@@ -42,7 +42,9 @@ getXPathByText <- function(text, doc, add_class = FALSE, exact = FALSE, attr = N
   xpath <- paste0("//*[text()[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ', 'abcdefghijklmnopqrstuvwxyz'), '", text, "')]]")
   tag <- doc %>% html_nodes(xpath = xpath)
   tag
-  winner <- tag %>% html_name() %>% table(.) %>% {names(.)[which.max(.)]}
+  tbl <- tag %>% html_name() %>% table(.)
+  winner <- names(tbl) %in% to_exclude %>% magrittr::not() %>% tbl[.] %>% {names(.)[which.max(.)]}
+
   tag <- tag[which(html_name(tag) == winner)[1]]
 
   tagName <- ""

@@ -1,13 +1,18 @@
 configure_xpath <- function(xpath, doc, ses, url) {
 
   phantom_results <- html_nodes(x = doc, xpath = xpath) %>% html_text()
-  xml2_results <- full_results <- html_nodes(x = url %>% xml2::read_html(), xpath = xpath) %>% html_text()
+  xml2_results <- tryCatch(html_nodes(x = url %>% xml2::read_html(), xpath = xpath) %>% html_text(),
+                           error = function(e){
+                             message("www. call failing, trying without")
+                             url <- gsub(pattern = "www.", replacement = "", x = url)
+                             html_nodes(x = url %>% xml2::read_html(), xpath = xpath) %>% html_text()
+                           })
   require_js <- !identical(phantom_results, xml2_results)
 
   classes <- c()
   node <- html_nodes(doc, xpath = xpath)[1]
   name <- "x"
-  while(name != "html"){
+  while(name != "html" & length(node)){
     classes <- c(classes, node %>% html_attr(name = "class"))
     node %<>% html_nodes(xpath = "..")
     name <- html_name(node)
