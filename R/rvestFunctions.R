@@ -324,9 +324,6 @@ subsetByStr3 <- function(lstRaw, arr){
   lst
 }
 
-
-
-
 showHtmlPage <- function(doc){
   tmp <- tempfile(fileext = ".html")
   doc %>% toString %>% writeLines(con = tmp)

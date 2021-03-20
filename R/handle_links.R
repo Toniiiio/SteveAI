@@ -8,7 +8,8 @@ equalize_links <- function(link){
 filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
 
   links$href <- sapply(links$href, equalize_links)
-  # some links are reported like: "//www.saturn.de/de/category/_teegeräte-476120.html".
+  # some links are reported like: "//www.url.de".
+  # example (url <- dc("2f 2f 77 77 77 2e 73 61 74 75 72 6e 2e 64 65 2f 64 65 2f 63 61 74 65 67 6f 72 79 2f 5f 74 65 65 67 65 72 e4 74 65 2d 34 37 36 31 32 30 2e 68 74 6d 6c"))
   needs_start <- substring(text = links$href, first = 1, last = 1) %in% c("/", "?") &
     !grepl(x = links$href, pattern = "http") &
     !grepl(x = links$href, pattern = "www.", fixed = TRUE)

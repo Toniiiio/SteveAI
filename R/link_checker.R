@@ -1,15 +1,16 @@
 # open issues
 # could be in pdf -
-# than go over domain https://recalm.com/wp-content/uploads/2019/07/D2019_07_03_Ausschreibung_Abschlussarbeit_Elektrotechnik.pdf
+# than go over domain "68 74 74 70 73 3a 2f 2f 72 65 63 61 6c 6d 2e 63 6f 6d 2f 77 70 2d 63 6f 6e 74 65 6e 74 2f 75 70 6c 6f 61 64 73 2f 32 30 31 39 2f 30 37 2f 44 32 30 31 39 5f 30 37 5f 30 33 5f 41 75 73 73 63 68 72 65 69 62 75 6e 67 5f 41 62 73 63 68 6c 75 73 73 61 72 62 65 69 74 5f 45 6c 65 6b 74 72 6f 74 65 63 68 6e 69 6b 2e 70 64 66"
 
-# start in der anderen dom?ne
-library(sodium)
-plaintext <- "https://recalm.com/wp-content/uploads/2019/07/D2019_07_03_Ausschreibung_Abschlussarbeit_Elektrotechnik.pdf"
-passkey <- sodium::sha256(charToRaw("aaa"))
-plaintext.raw <- serialize(plaintext, NULL)
-eurl <- sodium::data_encrypt(plaintext.raw, key = passkey)
-url <- unserialize(sodium::data_decrypt(eurl, key = sodium::sha256(charToRaw("aaa"))))
-#
+ec <- function(plaintext){
+  charToRaw(plaintext) %>% as.character() %>% paste(collapse = " ")
+}
+#ev("//www.saturn.de/de/category/_teegeräte-476120.html")
+
+dc <- function(eurl){
+  eurl %>% strsplit(split = " ") %>% .[[1]] %>% as.hexmode() %>% as.raw %>% rawToChar()
+}
+# (url <- dc(eurl))
 
 start_selenium <- function(port_nr = 4452){
 
