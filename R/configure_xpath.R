@@ -40,14 +40,14 @@ configure_xpath <- function(xpath, doc, ses, url) {
 
 
   out <- list(
+    classes = classes,
+    tags_pure = tags_pure,
     elem_limit = elem_limit,
     elem_full = elem_full,
-    require_js = require_js,
-    classes = classes,
-    tags_pure = tags_pure
+    require_js = require_js
   )
 
-  names(out)[1:2] <- c(xpath, xp)
+  names(out)[3:4] <- c(xpath, xp)
 
   return(out)
 }

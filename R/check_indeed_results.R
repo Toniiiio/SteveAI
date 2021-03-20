@@ -1,23 +1,34 @@
+# retry https://jobs.ernstings-family.com/persis/main?fn=bm.ausschreibungsuebersicht&cfg_kbez=Internet&__nav=0
 dont_run <- function(){
   library(rvest)
   library(httr)
   library(magrittr)
   library(urltools)
 
-  #nr <- 1
+  #load(file = "data/job_page_candidates_indeed.RData")
+  load("data/wiki_indeed.RData")
+  source("R/configure_xpath.R")
+
+  indeed_results2 <- wiki_results2
+  #nr <- 11
   xx <- which(lengths(indeed_results2) == 7)
+
   nrr <- xx[nr]
+  nr
   out <- indeed_results2[[nrr]]
 
   out$candidate_meta
+  out$parsed_links$href[out$winner]
+  #out$doc %>% SteveAI::showHtmlPage()
   nr <- nr + 1
 
+  out$parsed_links$href
   out$candidate_meta
-  out$doc %>% showHtmlPage()
+
   out$parsed_links$href[out$winner] %>% browseURL()
-  out$candidate_meta$target_text <- "SOFTWARE ENGINEER"
+  #out$candidate_meta$target_text <- "SOFTWARE ENGINEER"
   out$counts
-  required_len <- 10
+  required_len <- 9
 
   tags_pure <- out$candidate_meta$tags_pure
   classes <- out$candidate_meta$classes
@@ -138,7 +149,3 @@ dont_run <- function(){
 
 }
 
-
-
-#(M / F / D)
-# (m / f / d)

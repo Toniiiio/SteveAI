@@ -3,7 +3,13 @@
 # than go over domain https://recalm.com/wp-content/uploads/2019/07/D2019_07_03_Ausschreibung_Abschlussarbeit_Elektrotechnik.pdf
 
 # start in der anderen dom?ne
-# https://recruitingapp-5118.de.umantis.com/Vacancies/2972/Description/1?lang=ger&DesignID=00
+library(sodium)
+plaintext <- "https://recalm.com/wp-content/uploads/2019/07/D2019_07_03_Ausschreibung_Abschlussarbeit_Elektrotechnik.pdf"
+passkey <- sodium::sha256(charToRaw("aaa"))
+plaintext.raw <- serialize(plaintext, NULL)
+eurl <- sodium::data_encrypt(plaintext.raw, key = passkey)
+url <- unserialize(sodium::data_decrypt(eurl, key = sodium::sha256(charToRaw("aaa"))))
+#
 
 start_selenium <- function(port_nr = 4452){
 
@@ -46,33 +52,14 @@ start_selenium <- function(port_nr = 4452){
 
 }
 
-# remDr <- start_selenium(port = 4450)
-
-# has german/english local problem
-url <- "https://www.dzbank.de"
-url <- "http://www.cewe.de"
-
-# javascript - hidden behind buttons
-url <- "https://www.aok.de"
-
-# strange start but works
-url <- "https://www.wmf.de"
-
-# german local english potential problem, doesnt find search page
-url <- "https://www.lidl.de"
-
-url <- "https://www.aldi-sued.de"
-
-# grab all links from that url
-
-# url <- "https://www.danone.de"
 get_doc_selenium <- function(url, remDr){
 
   url <- as.character(url)
   remDr$navigate(url)
   domain <- remDr$getCurrentUrl()[[1]] %>%
-    urltools::domain() %>%
-    gsub(pattern = "www.", replacement = "")
+    urltools::domain()
+    # %>%
+    # gsub(pattern = "www.", replacement = "")
   elem <- remDr$findElement(using = "xpath", value = "/*")
   doc <- elem$getElementAttribute("innerHTML") %>%
     .[[1]] %>%
@@ -94,8 +81,9 @@ get_doc_phantom <- function(url, ses){
 
 
   domain <- tryCatch(ses$getUrl(), error = function(e) return("")) %>%
-    urltools::domain() %>%
-    gsub(pattern = "www.", replacement = "")
+    urltools::domain()
+    # %>%
+    # gsub(pattern = "www.", replacement = "")
 
   doc <- tryCatch(ses$findElement(xpath = "/*")$getAttribute(name = "innerHTML") %>%
     xml2::read_html(), error = function(e){
@@ -228,7 +216,6 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   #all_docs[[id]] %>% SteveAI::showHtmlPage()
   # html_texts[[id]] %>% cat
-  # doc <- "https://www.bofrost.de/karriere/job/" %>% read_html
 
   doc <- all_docs[[id]]
 
@@ -238,8 +225,6 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   counts[iter_nr] <- unlist(matches[[iter_nr]]) %>% as.numeric() %>% sum
 
-  # "https://careers.danone.com/de-global/" %in% links$href
-  # "https://careers.danone.com/de-global/" %in% links2$href
   # todo: cant find src in code - maybe have to use swith to frame but cant use it as new link then
   iframe_links_raw <- doc %>%
     html_nodes(xpath = "//iframe") %>%
@@ -270,7 +255,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
   # taleo careersection jobsearch
   head(links$href)
 
-  links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
+  # links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
 
   links <- check_for_button(links)
 
@@ -297,7 +282,7 @@ check_for_button <- function(links){
   }
 
   input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or @value = 'Search' or @title = 'Search Jobs' or @value='Suche starten']"
-  inputs <- ses$findElements(xpath = "//input")
+  inputs <- ses$findElements(xpath = input_xpath)
 
   job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search')]"
   is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
@@ -349,7 +334,7 @@ extract_target_text <- function(parsing_results){
   # doc %>% SteveAI::showHtmlPage()
   # parsing_results$all_docs[[parsing_results$winner]] %>% SteveAI::showHtmlPage()
   target_text <- get_target_text(parsing_results)
-  # target_text <- "Kundenbetreuer (W/m/d)"
+  # target_text <- "referent"
   target_text
 
   # doc %>% html_nodes(xpath = "//*[contains(text(), 'm/w/d')]") %>%
@@ -394,12 +379,14 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
     )
   }
 
+  #
+  # ses$getUrl()
   tags <- doc %>% html_nodes(xpath = "//*[self::a or self::button or self::input]")
   txt <- tags %>% html_text()
   val <- tags %>% html_attr(name = "value") %>% ifelse(is.na(.), "", .)
   links <- data.frame(text = paste0(txt, val), href = tags %>% html_attr(name = "href"))
 
-  if(!dim(links)[1]) stop("No links found")
+  if(!dim(links)[1]) stop("No links found for initial page.")
   links %>% grepl(pattern = "jobs") %>% sum
   head(links)
 
@@ -425,11 +412,6 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
   )
 }
 
-#remDr <- start_selenium(port_nr = 4459)
-#url <- "https://www.avitea.de/" --> selenium dies
-#url <- "https://www.daimler.de/"
-#url <- "https://www.capita.com/"
-# url <- "https://www.amazon.com/"
 # remDr = NULL
 # # ses <<- start_phantom()
 # use_selenium = FALSE
@@ -494,46 +476,3 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   out$candidate_meta
   return(out)
 }
-
-# cant replicate
-url <- "https://www.volkswagen.de"
-
-
-# works, but wrong filter
-url <- "https://www.rewe.de"
-
-
-# selenium javascript strange order
-url <- "https://www.wmf.de"
-
-url <- "https://www.sitel.com"
-
-# works
-url <- "https://www.bofrost.de"
-
-# ungenau
-url <- "https://www.vodafone.de"
-
-#no jobs present
-url <- "https://www.lotto.de"
-
-url <- "https://www.lotto-hessen.de"
-
-# javascript
-url <- "https://www.quantexa.com"
-url <- "https://quantexa.com/careers/current-vacancies/"
-
-url <- "https://www.revolut.com"
-
-url <- "http://www.die-lohners.de"
-
-# selenium
-url <- "http://www.actioservice.de"
-
-url <- "https://ayka-therapie.de/"
-
-
-
-# falscher abbieger zu linkedin - erst bei ferienjbos
-url <- "https://www.daimler.de"
-# https://www.daimler.de/karriere/jobsuche/"

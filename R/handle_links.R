@@ -18,11 +18,16 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   # links <- links2
 
   links$href %<>%
-    {ifelse(test = needs_start, yes = paste0("https://www.", domain, .), no = .)}
+    {ifelse(test = needs_start, yes = paste0("https://", domain, .), no = .)}
 
   domains <- links$href %>%
-    urltools::domain() %>%
-    gsub(pattern = "www.", replacement = "")
+    urltools::domain()
+
+    # cant always use www. - will grab over domian() if www. is required.
+    # domain ("https://www.google.de) will yield www.google.de others without wwww.
+    # https://superuser.com/questions/453673/some-websites-dont-work-with-the-www-prefix#_=_
+    # %>%
+    # gsub(pattern = "www.", replacement = "")
   # e.g. jobs.lidl.de should be same_domain as lidl.de - therefore use grepl instead of "=="
   same_domain <- is.na(domains) | grepl(pattern = domain, x = domains)
 
@@ -32,6 +37,7 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   alr_exist <- links$href %in% parsed_links
   is_html <- sapply(c("mailto:", "javascript:", ".tif", ".mp4", ".mp3", ".tiff", ".png", ".gif", ".jpeg",".jpg", ".zip", ".pdf"),
                     FUN = grepl, x = tolower(links$href)) %>%
+                    as.matrix %>%
     rowSums %>%
     magrittr::not()
 
@@ -56,7 +62,7 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   links$href %<>%
     {ifelse(
       test = not_matched,
-      yes = paste0("https://www.", domain, "/", .),
+      yes = paste0("https://", domain, "/", .),
       no = .)
     }
 
@@ -73,15 +79,14 @@ sort_links <- function(links){
   }
   # urls have to be case sensitive, see https://www.saturn.de/webapp/wcs/stores/servlet/MultiChannelAllJobsOverview.
   links$text <- tolower(links$text)
-  direct_match <- paste(c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)", "successfactors", "all open positions",
-                    "Ergebnisse 1 – 25 von", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ", "myworkdayjobs"), collapse = "|")
+  direct_match <- paste(c("(?=.*jobs)(?=.*suche)", "(?=.*jobs)(?=.*suche)(?=.*page=)", "(?=.*jobs)(?=.*suche)", "successfactors", "all open positions", "jobportal", "sjobs.brassring",
+                    "Ergebnisse 1 – 25 von", "stellenboerse", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ", "bewerbungsportal", "myworkdayjobs"), collapse = "|")
 
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "career", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ", "all open positions")
-  de_prioritize <- c("impressum", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube", "cookiebot.com", "google.com", "youtube-nocookie", "twitter", "linkedin", "signup", "request-password", "checkpoint", "signup", "wa.me", "vimeo",
+  prioritize <- c("stellenmarkt", "stellenboerse", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobportal", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "career", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ", "all open positions", "brassring")
+  de_prioritize <- c("impressum", "paypal", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube", "cookiebot.com", "google.com", "youtube-nocookie", "twitter", "linkedin", "signup", "request-password", "checkpoint", "signup", "wa.me", "vimeo",
                      "google.de/maps", "google.de/intl")
 
-   # lapply(direct_match, function(direct) lapply(links$href, grepl, perl = TRUE, pattern = direct))
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%
     which
 

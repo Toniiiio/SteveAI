@@ -27,7 +27,7 @@ extract_target_text <- function(parsing_results){
   #doc %>% SteveAI::showHtmlPage()
   xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
   xpath
-
+  html_nodes(doc, xpath = xpath)
 
   source("R/configure_xpath.R")
   url <- parsing_results$parsed_links$href[parsing_results$winner]
