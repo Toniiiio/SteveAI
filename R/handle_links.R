@@ -15,8 +15,6 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
     !grepl(x = links$href, pattern = "www.", fixed = TRUE)
   needs_start[is.na(needs_start)] <- FALSE
   links$href[needs_start]
-  # links %>% grepl(pattern = "https://www.aecom.com/http:")
-  # links <- links2
 
   links$href %<>%
     {ifelse(test = needs_start, yes = paste0("https://", domain, .), no = .)}
@@ -84,9 +82,9 @@ sort_links <- function(links){
                     "Ergebnisse 1 – 25 von", "stellenboerse", "vacancies", "current-vacancies", "Artikel pro Seite", "1 – 10 of ", "bewerbungsportal", "myworkdayjobs"), collapse = "|")
 
   # todo: könnte reihenfolge hier reinbringen - stellenangebote vor "über uns"
-  prioritize <- c("stellenmarkt", "stellenboerse", "current-vacancies", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobportal", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "career", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ", "all open positions", "brassring")
+  prioritize <- c("stellenmarkt", "stellenboerse", "current-vacancies", "Explore Opportunities", "recruiting.ultipro.com/", "offenepositionen", "vacancies", "bewerber", "jobfinder ", "stellen suchen", "jobportal", "jobbörse", "jobboerse", "jobs", "job", "all-jobs", "jobsuche","offenestellen", "offene-stellen", "stellenangebote", "job offers", "careers", "career", "karriere", "beruf", "über uns", "ueber uns", "ueber-uns", "uber ", "über ", "ueber ", "all open positions", "brassring")
   de_prioritize <- c("impressum", "paypal", "nutzungsbedingungen", "kontakt", "standort", "veranstaltungen", "newsletter", "datenschutz", "facebook", "instagram", "lpsnmedia.net", "google.com/recaptcha", "usercentrics", "linkedin", "googletagmanager", "cookies", "addthis.com", "xing.com", "youtube", "cookiebot.com", "google.com", "youtube-nocookie", "twitter", "linkedin", "signup", "request-password", "checkpoint", "signup", "wa.me", "vimeo",
-                     "google.de/maps", "google.de/intl")
+                     "google.de/maps", "google.de/intl", "fls.doubleclick.net")
 
   direct <- sapply(links$href, grepl, perl = TRUE, pattern = direct_match, USE.NAMES = FALSE) %>%
     which

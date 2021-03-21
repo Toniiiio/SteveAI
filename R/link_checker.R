@@ -5,7 +5,7 @@
 ec <- function(plaintext){
   charToRaw(plaintext) %>% as.character() %>% paste(collapse = " ")
 }
-#ev("//www.saturn.de/de/category/_teegeräte-476120.html")
+ec("https://careers.spglobal.com/jobs")
 
 dc <- function(eurl){
   eurl %>% strsplit(split = " ") %>% .[[1]] %>% as.hexmode() %>% as.raw %>% rawToChar()
@@ -243,7 +243,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
   parsed_links[iter_nr, ]$text <- target_link$text
 
   links <- rbind(iframe_links, links, all_links[[id]]) %>%
-    filter_links(domain = domain, parsed_links = parsed_links)
+    filter_links(links = links, domain = domain, parsed_links = parsed_links)
   links <- links[!duplicated(links$href), ]
   links$href
 
@@ -282,10 +282,10 @@ check_for_button <- function(links){
     tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
   }
 
-  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or @value = 'Search' or @title = 'Search Jobs' or @value='Suche starten']"
+  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or contains(@value, 'Search') or @title = 'Search Jobs' or @value='Suche starten']"
   inputs <- ses$findElements(xpath = input_xpath)
 
-  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search')]"
+  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search') or contains(text(), 'Search Current Openings')  or contains(text(), 'Careers')]"
   is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
   is_job_related
 
@@ -308,6 +308,13 @@ check_for_button <- function(links){
     }
   }
 
+  alinks <- ses$findElements(xpath = "//a[@id = 'taleoSearchSubmit']")
+  if(is_job_related){
+    for(nr in seq(alinks)){
+      message("Found and trying a relevant input")
+      tryCatch(alinks[[nr]]$click(), error = function(e) message(e))
+    }
+  }
 
   url_after <- ses$getUrl()
   doc <- ses$findElement(xpath = "/*")

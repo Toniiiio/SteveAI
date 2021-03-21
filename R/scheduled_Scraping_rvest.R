@@ -101,8 +101,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
 
   fetch_time <- DBI::dbGetQuery(
     conn = conn,
-    statement = paste0("SELECT * FROM ", target_table_time),
-    row.names = TRUE
+    statement = paste0("SELECT * FROM ", target_table_time)
   )
 
   date_Col_Exists <- toString(as.numeric(date_today)) %in% colnames(fetch_time)
@@ -122,8 +121,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
     # have to update fetch_time variable since it does not contain new column, yet.
     fetch_time <- DBI::dbGetQuery(
       conn = conn,
-      statement = paste0("SELECT * FROM ", target_table_time),
-      row.names = TRUE
+      statement = paste0("SELECT * FROM ", target_table_time)
     )
 
   }
@@ -140,11 +138,10 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
     scrape_log_info(
       target_name = target_name,
       url = url,
-      msg = glue("Found {n_jobs} new jobs for the given day: {date_today} that are not in the time database. Add rows for that with value of 0 for the
+      msg = glue::glue("Found {n_jobs} new jobs for the given day: {date_today} that are not in the time database. Add rows for that with value of 0 for the
                      past, since they didnt exist back then. This value has to be equal to the amount of new jobs in the id data table.."),
       logger_name = logger_name
     )
-
 
     new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols)
     rownames(new_jobs) <- new_jobs_name
@@ -177,8 +174,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
     conn = conn,
     name = target_table_time,
     value = all_jobdata,
-    overwrite = TRUE,
-    row.names = TRUE
+    overwrite = TRUE
   )
 
   amt_duplicate_positions <- today_jobs_time[[1]] %>%
@@ -291,7 +287,8 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
   tbl <- table(data_to_store$job_id %>% trimws)
   today_jobs_time <- data.frame(as.numeric(tbl))
-  rownames(today_jobs_time) = names(tbl)
+  # dont use rownames - that gets messy
+  today_jobs_time$id = names(tbl)
   colnames(today_jobs_time) <- date_today
 
   conn <- DBI::dbConnect(RSQLite::SQLite(), db_name)
@@ -317,8 +314,7 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
       conn = conn,
       name = target_table_time,
       value = to_db,
-      overwrite = TRUE,
-      row.names = TRUE
+      overwrite = TRUE
     )
 
   }
@@ -497,11 +493,12 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
 
 }
 
-
+date_today = Sys.Date()
 run <- function(date_today = Sys.Date()){
 
   print(Sys.time())
   data_raw <- list()
+  #SteveAI_dir <- "~"
   durationFileName <- glue("{SteveAI_dir}/scrapeDuration_{date_today}.csv")
 
   folder_name <- glue("response_raw/{date_today}")
@@ -544,7 +541,9 @@ run <- function(date_today = Sys.Date()){
 
   if(!length(nms)) stop("Did not find any downloaded files.")
 
-  nr <- 2
+  file.copy(from = "~/rvest_scraper.db", to = glue::glue("~/rvest_scraper_{date_today}_BACKUP.db"))
+
+  nr <- 1
   #names(SteveAI::rvestScraper)
   for(nr in seq(SteveAI::rvestScraper)){
 
@@ -662,7 +661,7 @@ run <- function(date_today = Sys.Date()){
 }
 
 
-# run(date_today = Sys.Date() - 1)
+# run(date_today = Sys.Date())
 
 
 ### repair SteveAI::rvestScraper

@@ -10,7 +10,7 @@ dont_run <- function(){
   source("R/configure_xpath.R")
 
   indeed_results2 <- wiki_results2
-  #nr <- 13
+  nr <- 31
   xx <- which(lengths(indeed_results2) == 7)
 
   nrr <- xx[nr]
@@ -26,7 +26,9 @@ dont_run <- function(){
   out$candidate_meta
 
 
+  out$parsed_links$href
   out$parsed_links$href[out$winner] %>% browseURL()
+  out$parsed_links$href[out$winner] %>% ec
 
   #out$candidate_meta$target_text <- "SOFTWARE ENGINEER"
   out$parsed_links$href

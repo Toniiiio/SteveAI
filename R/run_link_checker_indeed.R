@@ -42,7 +42,7 @@ dont_run <- function(){
   pjs <<- webdriver::run_phantomjs()
   ses <<- webdriver::Session$new(port = pjs$port)
 
-  urls %>% grepl(pattern = "eurofin") %>% which
+  urls %>% grepl(pattern = "sturbucks") %>% which
   url <- "https://www.Xxx.com/"
   nr <- 596
   for(nr in seq(urls)){
