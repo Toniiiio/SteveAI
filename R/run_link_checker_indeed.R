@@ -44,6 +44,7 @@ dont_run <- function(){
 
   urls %>% grepl(pattern = "sturbucks") %>% which
   url <- "https://www.Xxx.com/"
+  url <- "https://karriere.bayer.de/de/"
   nr <- 3
   for(nr in seq(urls)[2:100]){
     url <- urls[nr]
@@ -72,3 +73,5 @@ dont_run <- function(){
 
 }
 
+wiki_results2[[url]]$counts
+wiki_results2[[url]]$parsed_links$href
