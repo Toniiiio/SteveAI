@@ -19,21 +19,10 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   links$href %<>%
     {ifelse(test = needs_start, yes = paste0("https://", domain, .), no = .)}
 
-  domains <- links$href %>%
-    urltools::domain()
-
-    # cant always use www. - will grab over domian() if www. is required.
-    # domain ("https://www.google.de) will yield www.google.de others without wwww.
-    # https://superuser.com/questions/453673/some-websites-dont-work-with-the-www-prefix#_=_
-    # %>%
-    # gsub(pattern = "www.", replacement = "")
-  # e.g. jobs.lidl.de should be same_domain as lidl.de - therefore use grepl instead of "=="
-  same_domain <- is.na(domains) | grepl(pattern = domain, x = domains)
-
   hash_link <- substr(links$href, 1, 1) == "#"
   is_empty <- !nchar(links$href)
   is_na <- is.na(links$href)
-  alr_exist <- links$href %in% parsed_links
+  alr_exist <- links$href %in% parsed_links$href
   is_html <- sapply(c("mailto:", "javascript:", ".tif", ".mp4", ".mp3", ".tiff", ".png", ".gif", ".jpeg",".jpg", ".zip", ".pdf"),
                     FUN = grepl, x = tolower(links$href)) %>%
                     as.matrix %>%
@@ -48,6 +37,18 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
   links %<>%
     .[keep, ] %>%
     {.[!duplicated(.), ]}
+
+  domains <- links$href %>%
+    urltools::domain()
+
+  # cant always use www. - will grab over domian() if www. is required.
+  # domain ("https://www.google.de) will yield www.google.de others without wwww.
+  # https://superuser.com/questions/453673/some-websites-dont-work-with-the-www-prefix#_=_
+  # %>%
+  # gsub(pattern = "www.", replacement = "")
+  # e.g. jobs.lidl.de should be same_domain as lidl.de - therefore use grepl instead of "=="
+  same_domain <- is.na(domains) | grepl(pattern = domain, x = domains)
+
 
   if(filter_domain) links %<>% .[same_domain, ]
   # links %>% grepl(pattern = "jobs") %>% which %>% {links2[.]}
@@ -64,7 +65,6 @@ filter_links <- function(links, domain, parsed_links, filter_domain = FALSE){
       yes = paste0("https://", domain, "/", .),
       no = .)
     }
-
 
   return(links)
 

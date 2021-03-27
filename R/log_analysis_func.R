@@ -1,5 +1,6 @@
 error_type_ident <- c(
   wrong_xpath = "No results for given xpath",
+  diff_length_links_id = "Lengths of jobNames and links differ",
   wrong_url = "Missing url for comp_name",
   status_404 = "code:404",
   timeout = "Connection timed out after",
@@ -26,6 +27,9 @@ parse_logs <- function(log_file){
     do.call(what = rbind) %>%
     data.frame %>%
     setNames(nm = c("date", "session_ID", "function", "level", "message"))
+
+  if(log_Data %>% nrow() == 1) stop("Only one row")
+
 
   log_time <- log_Data$date %>%
     strsplit(split = "T") %>%
@@ -58,3 +62,4 @@ parse_logs <- function(log_file){
   return(log_Data)
 
 }
+

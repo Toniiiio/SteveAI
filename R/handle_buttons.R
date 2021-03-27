@@ -130,7 +130,7 @@ dont_run <- function(){
 
   pjs <- webdriver::run_phantomjs()
   ses <<- webdriver::Session$new(port = pjs$port)
-  # ses$
+  # ses$go("https://www.google.de")
   #   xx <- ses$getWindow()
   # ses <- xx$setSize(3000, 2000)
   # ses$initialize(id = )

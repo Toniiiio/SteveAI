@@ -288,8 +288,8 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
   tbl <- table(data_to_store$job_id %>% trimws)
   today_jobs_time <- data.frame(as.numeric(tbl))
   # dont use rownames - that gets messy
-  today_jobs_time$id = names(tbl)
   colnames(today_jobs_time) <- date_today
+  today_jobs_time$id = names(tbl)
 
   conn <- DBI::dbConnect(RSQLite::SQLite(), db_name)
 
@@ -337,10 +337,13 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 #
 #
 # # SteveAI_dir <- "/home/pi/sivis/scrape"
-# SteveAI_dir <- "~"
+
+library(futile.logger)
+library(glue)
+SteveAI_dir <- "~"
 # setwd(SteveAI_dir)
 # # load(file.path(SteveAI_dir, "scraper_rvest.RData"))
-# logger_name <- "sivis"
+logger_name <- "sivis"
 
 if(!dir.exists("dataRvest")){
 
@@ -348,10 +351,9 @@ if(!dir.exists("dataRvest")){
 
 }
 
-# date_today <- Sys.Date()
-# file_path <- file.path(getwd(), paste0("rvest_single_", date_today, ".log"))
-#
-# flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), logger= logger_name)
+date_today <- Sys.Date()
+file_path <- file.path(getwd(), paste0("rvest_single_", date_today, ".log"))
+flog.info(msg = paste0("Logger successfully initialized from calling script at: ", file_path), name= logger_name)
 
 # load("~/TMP/raspi/scraper.RData")
 # scrapers <- scraper
@@ -492,6 +494,41 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
   flog.error(msg = msg, name = logger_name)
 
 }
+
+date_today = Sys.Date()
+
+
+pre_check <- function(){
+
+  library(magrittr)
+  db_name <- "rvest_scraper.db"
+  target_table_job <- "RVEST_SINGLE_JOBS"
+  target_table_time <- "RVEST_SINGLE_TIME"
+
+  conn <- DBI::dbConnect(RSQLite::SQLite(), db_name)
+  fetch_jobid <- DBI::dbGetQuery(
+    conn = conn,
+    statement = paste0("SELECT * FROM ", target_table_job)
+  )
+  fetch_jobid %>% head
+
+  fetch_job_time <- DBI::dbGetQuery(
+    conn = conn,
+    statement = paste0("SELECT * FROM ", target_table_time)
+  )
+  fetch_job_time %>% head
+
+  log_path <- "~"
+  UC_Name = "rvest_single"
+  logger_name = "sivis"
+  file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
+  initialize(logger_name = logger_name, trennzeichen = "___", log_path = "~", UC_Name = "rvest_single", file_name)
+  flog.info("test", name = logger_name)
+  log_Data <- file_name %>%
+    readLines
+  log_Data
+}
+
 
 date_today = Sys.Date()
 run <- function(date_today = Sys.Date()){

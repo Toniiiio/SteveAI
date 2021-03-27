@@ -44,8 +44,8 @@ dont_run <- function(){
 
   urls %>% grepl(pattern = "sturbucks") %>% which
   url <- "https://www.Xxx.com/"
-  nr <- 596
-  for(nr in seq(urls)){
+  nr <- 3
+  for(nr in seq(urls)[2:100]){
     url <- urls[nr]
     url
     wiki_results2[[url]] <- tryCatch(

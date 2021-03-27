@@ -243,7 +243,8 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
   parsed_links[iter_nr, ]$text <- target_link$text
 
   links <- rbind(iframe_links, links, all_links[[id]]) %>%
-    filter_links(links = links, domain = domain, parsed_links = parsed_links)
+    filter_links(domain = domain, parsed_links = parsed_links, filter_domain = FALSE)
+
   links <- links[!duplicated(links$href), ]
   links$href
 
@@ -317,6 +318,8 @@ check_for_button <- function(links){
   }
 
   url_after <- ses$getUrl()
+  print(url_after)
+  print(url_before)
   doc <- ses$findElement(xpath = "/*")
   doc_len_after <- doc$getAttribute("innerHTML") %>% nchar
 
@@ -365,6 +368,7 @@ extract_target_text <- function(parsing_results){
 
 
 create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter) {
+
   if(use_selenium){
     out <- get_doc_selenium(url, remDr)
     doc <- out$doc
@@ -401,7 +405,7 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
   #links_per_level[1] <- url
 
 
-  links <- filter_links(links = links, domain = domain, parsed_links = parsed_links)
+  links <- filter_links(links = links, domain = domain, parsed_links = parsed_links, filter_domain = FALSE)
 
   # catch document and all links
   html_texts <- list()
