@@ -5,7 +5,7 @@
 ec <- function(plaintext){
   charToRaw(plaintext) %>% as.character() %>% paste(collapse = " ")
 }
-ec("https://careers.spglobal.com/jobs")
+# ec("https://careers.spglobal.com/jobs")
 
 dc <- function(eurl){
   eurl %>% strsplit(split = " ") %>% .[[1]] %>% as.hexmode() %>% as.raw %>% rawToChar()
@@ -75,7 +75,7 @@ get_doc_phantom <- function(url, ses){
   url <- as.character(url)
   tryCatch(ses$go(url), error = function(e){
     warning("Need to restart phantom webdriver")
-    pjs <- webdriver::run_phantomjs()
+    pjs <<- webdriver::run_phantomjs()
     ses <<- webdriver::Session$new(port = pjs$port)
     ses$go(url)
   })

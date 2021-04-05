@@ -4,7 +4,7 @@
 # library(futile.logger)
 # library(magrittr)
 # library(DBI)
-# source("SteveAI/R/logging.R")
+# #source("SteveAI/R/logging.R")
 # source("R/logging.R")
 
 ### Doku: Database management
@@ -497,6 +497,11 @@ scrape_log_error <- function(target_name, url, msg, logger_name){
 
 date_today = Sys.Date()
 
+log_path <- "~"
+UC_Name = "rvest_single"
+logger_name = "sivis"
+file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
+initialize(logger_name = logger_name, trennzeichen = "___", log_path = getwd(), UC_Name = "rvest_single", file_name)
 
 pre_check <- function(){
 
@@ -522,7 +527,7 @@ pre_check <- function(){
   UC_Name = "rvest_single"
   logger_name = "sivis"
   file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
-  initialize(logger_name = logger_name, trennzeichen = "___", log_path = "~", UC_Name = "rvest_single", file_name)
+  initialize(logger_name = logger_name, trennzeichen = "___", log_path = getwd(), UC_Name = "rvest_single", file_name)
   flog.info("test", name = logger_name)
   log_Data <- file_name %>%
     readLines
@@ -532,6 +537,8 @@ pre_check <- function(){
 
 date_today = Sys.Date()
 run <- function(date_today = Sys.Date()){
+
+  pre_check()
 
   print(Sys.time())
   data_raw <- list()

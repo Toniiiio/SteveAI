@@ -80,7 +80,7 @@ has_indeed_jobs <- function(job_titles, html_text){
 }
 
 has_add_indicators <- function(html_text){
-  indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/d", "stelle anzeigen", "(gn*)", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "junior", "senior", "Mitarbeiter/In", "Assistent", "Referent", "Stellenangebot", "Bewerbungsfrist", "Bewerbungsportal")
+  indicators <- c("m/w/x", "m/f/d", "w/m/d", "m/w/div", "m/w/d", "stelle anzeigen", "(gn*)", "vollzeit", "vollzeit/teilzeit", "treffer pro seite", "junior", "senior", "Mitarbeiter/In", "Assistent", "Referent", "Stellenangebot", "Bewerbungsfrist", "Bewerbungsportal")
   indicator_match <- sapply(indicators,stringr::str_count, string = tolower(html_text))
   indicator_match %>% sum
 }

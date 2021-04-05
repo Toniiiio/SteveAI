@@ -1,2 +1,4 @@
 response_raw/
+logs/
+data/scraper_meta/
 .Rproj.user

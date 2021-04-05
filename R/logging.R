@@ -6,7 +6,7 @@ options(tryCatchLog.include.full.call.stack = FALSE)
 options(keep.source = TRUE)
 
 #file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
-initialize  <- function(logger_name = "sivis", trennzeichen = "___", log_path = "~", UC_Name = "rvest_single", file_name){
+initialize  <- function(logger_name = "sivis", trennzeichen = "___", log_path, UC_Name = "rvest_single", file_name){
 
   flog.logger(
     name = logger_name
@@ -91,72 +91,6 @@ initialize  <- function(logger_name = "sivis", trennzeichen = "___", log_path = 
   flog.layout(layoutFunc, name = logger_name)
 
 
-  log_status <<- function(status, name, url){
-
-    msg <- glue::glue("Server response status code for comp_name:'{name}' is code:{status} for url:'{url}'.")
-
-    if(status == 200){
-
-      flog.info(
-        msg = msg,
-        name = logger_name
-      )
-
-    }else if(status >= 400 & status <= 499){
-
-      flog.error(
-        msg = msg,
-        name = logger_name
-      )
-
-    }else{
-
-      flog.warn(
-        msg = msg,
-        name = logger_name
-      )
-
-    }
-
-  }
-
-  log_node_len <<- function(nodes, name, scraper, content, iterNr = 1){
-
-    nodes_len <- nodes %>% length
-    url <- scraper$url
-    if(!is.null(scraper$no_job_id)){
-      valid_no_items <- grepl(pattern = scraper$no_job_id, x = content %>% toString)
-    }else{
-      valid_no_items <- FALSE
-    }
-
-    if(nodes_len == 0 & iterNr == 1 & !valid_no_items){
-
-      flog.error(
-        msg = glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'."),
-        name = logger_name
-      )
-
-
-    }else if(valid_no_items){
-
-      msg <- glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'. Found id valid_no_items:'{scraper$no_job_id}'.")
-      flog.info(
-        msg = msg,
-        name = logger_name
-      )
-
-
-    }else{
-
-      flog.info(
-        msg = glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'."),
-        name = logger_name
-      )
-
-    }
-
-  }
 
   #flog.info(msg = "Logger successfully initialized within function definition.", logger= logger_name)
 
@@ -174,39 +108,111 @@ initialize  <- function(logger_name = "sivis", trennzeichen = "___", log_path = 
   # aaa()
 
 
-  scrape_log_info <<- function(target_name, url, msg, logger_name){
-
-    msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following log is written: {msg}")
-    flog.info(msg = msg, name = logger_name)
-
-  }
-
-  scrape_log_warn <<- function(target_name, url, msg, logger_name){
-
-    msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following log is written: {msg}")
-    flog.warn(msg = msg, name = logger_name)
-
-  }
-
-  scrape_log_error <<- function(target_name, url, msg, logger_name){
-
-    if(is.null(url)){
-
-      msg <- glue::glue("Missing url for comp_name:'{target_name}' Provided url is NULL - please provide a valid url.")
-
-    }else{
-
-      msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following error was recorded: {msg}") %>%
-        toString
-
-    }
-
-    flog.error(msg = msg, name = logger_name)
-
-  }
 
 
   flog.info(msg = "Logger successfully initialized within function definition.", name = logger_name)
 
 }
 
+
+
+
+log_status <- function(status, name, url){
+
+  msg <- glue::glue("Server response status code for comp_name:'{name}' is code:{status} for url:'{url}'.")
+
+  if(status == 200){
+
+    flog.info(
+      msg = msg,
+      name = logger_name
+    )
+
+  }else if(status >= 400 & status <= 499){
+
+    flog.error(
+      msg = msg,
+      name = logger_name
+    )
+
+  }else{
+
+    flog.warn(
+      msg = msg,
+      name = logger_name
+    )
+
+  }
+
+}
+
+log_node_len <- function(nodes, name, scraper, content, iterNr = 1){
+
+  nodes_len <- nodes %>% length
+  url <- scraper$url
+  if(!is.null(scraper$no_job_id)){
+    valid_no_items <- grepl(pattern = scraper$no_job_id, x = content %>% toString)
+  }else{
+    valid_no_items <- FALSE
+  }
+
+  if(nodes_len == 0 & iterNr == 1 & !valid_no_items){
+
+    flog.error(
+      msg = glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'."),
+      name = logger_name
+    )
+
+
+  }else if(valid_no_items){
+
+    msg <- glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'. Found id valid_no_items:'{scraper$no_job_id}'.")
+    flog.info(
+      msg = msg,
+      name = logger_name
+    )
+
+
+  }else{
+
+    flog.info(
+      msg = glue::glue("Amount nodes for comp_name:'{name}' is amount_nodes:{nodes %>% length} for url:'{url}'."),
+      name = logger_name
+    )
+
+  }
+
+}
+
+
+
+scrape_log_info <- function(target_name, url, msg, logger_name){
+
+  msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following log is written: {msg}")
+  flog.info(msg = msg, name = logger_name)
+
+}
+
+scrape_log_warn <- function(target_name, url, msg, logger_name){
+
+  msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following log is written: {msg}")
+  flog.warn(msg = msg, name = logger_name)
+
+}
+
+scrape_log_error <- function(target_name, url, msg, logger_name){
+
+  if(is.null(url)){
+
+    msg <- glue::glue("Missing url for comp_name:'{target_name}' Provided url is NULL - please provide a valid url.")
+
+  }else{
+
+    msg <- glue::glue("For comp_name:'{target_name}' with url:'{url}' the following error was recorded: {msg}") %>%
+      toString
+
+  }
+
+  flog.error(msg = msg, name = logger_name)
+
+}

@@ -16,14 +16,15 @@ clean_domains <- function(){
   domains[which(conts != "200")] <- c(
     "https://www.idealo.de/",
     "https://www.dz-privatbank.com/dzpb/",
+    "",
     "https://www.americantower.com/",
     "",
-    "https://www.brenntag.com/corporate/de/",
-    "https://www.idealo.de/"
+    "https://www.brenntag.com/corporate/de/"
   )
 
   for(nr in seq(rvestScraper)){
     rvestScraper[[nr]]$domain <- domains[nr]
   }
   save(rvestScraper, file = "data/scraper_rvest.RData")
+  save(rvestScraper, file = "../scraper_rvest.RData")
 }

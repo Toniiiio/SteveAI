@@ -73,5 +73,5 @@ dont_run <- function(){
 
 }
 
-wiki_results2[[url]]$counts
-wiki_results2[[url]]$parsed_links$href
+# wiki_results2[[url]]$counts
+# wiki_results2[[url]]$parsed_links$href
