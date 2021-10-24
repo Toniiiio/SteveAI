@@ -1,0 +1,5 @@
+INFO [2021-05-06 19:27:22] test
+ERROR [2021-05-06 19:46:17] For comp_name:'DEFINIENS' with url:'https://jobs.definiens.com/search/?createNewAlert=false&q=&locationsearch=&optionsFacetsDD_country=&optionsFacetsDD_department=&optionsFacetsDD_customfield1=' the following error was recorded: Error in curl::curl_fetch_memory(url, handle = handle): schannel: next InitializeSecurityContext failed: SEC_E_CERT_EXPIRED (0x80090328) - Das empfangene Zertifikat ist abgelaufen.
+
+ERROR [2021-05-06 19:46:57] For comp_name:'BRENNTAG' with url:'https://bewerbung.brenntag-jobs.de/de/?filter[land][1]=1' the following error was recorded: Error in curl::curl_fetch_memory(url, handle = handle): schannel: next InitializeSecurityContext failed: SEC_E_UNTRUSTED_ROOT (0x80090325) - Die Zertifikatkette wurde von einer nicht vertrauenswürdigen Zertifizierungsstelle ausgest
+

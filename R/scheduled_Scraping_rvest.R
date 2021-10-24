@@ -21,6 +21,9 @@
 # Then,
 # - add 1 to all jobs that are on current day
 
+
+
+
 ### To learn:
 # - write use cases and examples for tests or additions or implementations
 # - if remove: can i safely remove this?
@@ -53,6 +56,7 @@ which01 <- function(x, arr.ind = FALSE, useNames = TRUE, one = TRUE){
 }
 
 update_tbl <- function(conn, target_table_job, data_to_store) {
+
   fetch_jobid <- DBI::dbGetQuery(
     conn = conn,
     statement = paste0("SELECT * FROM ", target_table_job)
@@ -127,7 +131,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
   }
 
   #### TIME TABLE -  add new rows (with 0 initially!) for jobs that does not exist yet
-  new_jobs_name <- rownames(today_jobs_time)[!(rownames(today_jobs_time) %in% rownames(fetch_time))]
+  new_jobs_name <- today_jobs_time$id[!(today_jobs_time$id %in% fetch_time$id)]
   length(new_jobs_name)
 
   if(length(new_jobs_name)){
@@ -143,9 +147,10 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
       logger_name = logger_name
     )
 
-    new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols)
+    new_jobs <- matrix(0, nrow = n_jobs, ncol = n_cols) %>% as.data.frame()
     rownames(new_jobs) <- new_jobs_name
     colnames(new_jobs) <- colnames(fetch_time)
+    new_jobs$id <- new_jobs_name
     all_jobdata_till_today <- rbind(fetch_time, new_jobs)
 
   }else{
@@ -160,7 +165,7 @@ update_time_table <- function(conn, target_table_time, target_name, url, logger_
 
   }
 
-  idx_to_Change <- match(rownames(all_jobdata_till_today), rownames(today_jobs_time)) %>%
+  idx_to_Change <- match(all_jobdata_till_today$id, today_jobs_time$id) %>%
     is.na %>%
     magrittr::not() %>%
     which
@@ -328,19 +333,9 @@ write_To_DB <- function(db_name, target_table_job, target_table_time, conn, out,
 
 }
 
-
-
-#setwd("C:/Users/user1/Documents/TMP/raspi")
-# load(glue("scraper_rvest.RData"))
-
-# start <- Sys.time()
-#
-#
-# # SteveAI_dir <- "/home/pi/sivis/scrape"
-
 library(futile.logger)
 library(glue)
-SteveAI_dir <- "~"
+SteveAI_dir <- getwd()
 # setwd(SteveAI_dir)
 # # load(file.path(SteveAI_dir, "scraper_rvest.RData"))
 logger_name <- "sivis"
@@ -430,34 +425,34 @@ rvestScraping <- function(response, name, scraper, date_today){
   #   XPath = XPath
   # )
 
-  if(length(rvestOut)){
+  if(!length(rvestOut)){
 
-    if(length(rvestOut) != length(links)){
-      e <- glue("Lengths of jobNames and links differ. Jobnames: '{paste0(head(rvestOut, 3), collapse = '\n')}' and links: '{paste0(head(links, 3), collapse = '\n')}'")
-      print("DIFFERENT LENGTHS!")
-      scrape_log_error(
-        target_name = name,
-        msg = e,
-        url = scraper$url,
-        logger_name = logger_name
-      )
-      links <- NA
-    }
-
-    out <- data.frame(
-      jobName = rvestOut,
-      links = links,
-      comp = name,
-      date = date_today,
-      location = "",
-      eingestelltAm = "",
-      bereich = ""
-    )
-  }else{
-
-    out <- NULL
+    print("no elements found")
+    return(NULL)
 
   }
+
+  if(length(rvestOut) != length(links)){
+    e <- glue("Lengths of jobNames and links differ. Jobnames: '{paste0(head(rvestOut, 3), collapse = '\n')}' and links: '{paste0(head(links, 3), collapse = '\n')}'")
+    print("DIFFERENT LENGTHS!")
+    scrape_log_error(
+      target_name = name,
+      msg = e,
+      url = scraper$url,
+      logger_name = logger_name
+    )
+    links <- NA
+  }
+
+  out <- data.frame(
+    jobName = rvestOut,
+    links = links,
+    comp = name,
+    date = date_today,
+    location = "",
+    eingestelltAm = "",
+    bereich = ""
+  )
 
   return(out)
 }
@@ -506,6 +501,7 @@ initialize(logger_name = logger_name, trennzeichen = "___", log_path = getwd(), 
 pre_check <- function(){
 
   library(magrittr)
+  library(futile.logger)
   db_name <- "rvest_scraper.db"
   target_table_job <- "RVEST_SINGLE_JOBS"
   target_table_time <- "RVEST_SINGLE_TIME"
@@ -523,7 +519,7 @@ pre_check <- function(){
   )
   fetch_job_time %>% head
 
-  log_path <- "~"
+  log_path <- getwd()
   UC_Name = "rvest_single"
   logger_name = "sivis"
   file_name <- file.path(log_path, paste0(UC_Name, "_", Sys.Date(), ".log"))
@@ -534,6 +530,39 @@ pre_check <- function(){
   log_Data
 }
 
+
+download_data <- function(logger_name, rvestScraper, folder_name) {
+
+  has_downloads <- folder_name %>% list.files() %>% length
+  if(has_downloads){
+    message("Already downloaded the data for that day.")
+    return()
+  }
+
+  get_nr <- 2
+  for(get_nr in seq(rvestScraper)){
+    print(get_nr)
+
+    target_name <- names(rvestScraper)[get_nr]
+    scraper = rvestScraper[[get_nr]]
+    response <- tryCatchLog(
+      expr = scraper$url %>% httr::GET(),
+      error = function(e){
+
+        scrape_log_error(
+          target_name = target_name,
+          msg = e,
+          url = scraper$url,
+          logger_name = logger_name
+        )
+
+      }
+    )
+
+    file_Name <- glue("{names(rvestScraper)[get_nr]}_{date_today}.RData")
+    save(response, file = glue("{folder_name}/{file_Name}"))
+  }
+}
 
 date_today = Sys.Date()
 run <- function(date_today = Sys.Date()){
@@ -549,33 +578,8 @@ run <- function(date_today = Sys.Date()){
   dir.create("response_raw")
   dir.create(folder_name)
 
-  get_nr <- 4
-
   #length()
-
-
-  for(get_nr in seq(SteveAI::rvestScraper)){
-    print(get_nr)
-
-    target_name <- names(SteveAI::rvestScraper)[get_nr]
-    scraper = SteveAI::rvestScraper[[get_nr]]
-    response <- tryCatchLog(
-      expr = scraper$url %>% httr::GET(),
-      error = function(e){
-
-        scrape_log_error(
-          target_name = target_name,
-          msg = e,
-          url = scraper$url,
-          logger_name = logger_name
-        )
-
-      }
-    )
-
-    file_Name <- glue("{names(SteveAI::rvestScraper)[get_nr]}_{date_today}.RData")
-    save(response, file = glue("{folder_name}/{file_Name}"))
-  }
+  download_data(logger_name, SteveAI::rvestScraper, folder_name)
 
   responses <- list.files(folder_name)
   nms <- responses %>%
@@ -587,7 +591,7 @@ run <- function(date_today = Sys.Date()){
 
   file.copy(from = "~/rvest_scraper.db", to = glue::glue("~/rvest_scraper_{date_today}_BACKUP.db"))
 
-  nr <- 1
+  nr <- 4
   #names(SteveAI::rvestScraper)
   for(nr in seq(SteveAI::rvestScraper)){
 
