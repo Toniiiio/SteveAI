@@ -15,6 +15,9 @@ Sys.Date() %>% as.numeric()
 wrong_id <- any(fetch_time$id %in% c("", 0, 1))
 wrong_id
 
+
+
+sum(fetch_time$`18924` == fetch_time$`18925`)/length(fetch_time$`18924`)
 #
 # xx <- rownames(fetch_time) %>% {grepl(pattern = "http", .)}
 # which(xx)

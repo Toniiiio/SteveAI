@@ -591,7 +591,8 @@ run <- function(date_today = Sys.Date()){
 
   file.copy(from = "~/rvest_scraper.db", to = glue::glue("~/rvest_scraper_{date_today}_BACKUP.db"))
 
-  nr <- 4
+  nr <- 3
+  #
   #names(SteveAI::rvestScraper)
   for(nr in seq(SteveAI::rvestScraper)){
 

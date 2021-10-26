@@ -1,7 +1,7 @@
 
 check_rvest_Scraper <- function(){
   rvestScraper <- SteveAI::rvestScraper
-  names(rvestScraper)[4] <- "Union Investment"
+  #names(rvestScraper)[4] <- "Union Investment"
 
   library(magrittr)
 
