@@ -5,8 +5,10 @@ library(magrittr)
 library(glue)
 library(xml2)
 library(rvest)
+library(shinyalert)
+load(file.path("~", "scraper_rvest.RData"))
 
-get_error_items <- function(SteveAI_dir){
+get_error_comps <- function(SteveAI_dir){
 
   date_today <- Sys.Date()
 
@@ -26,10 +28,10 @@ get_error_items <- function(SteveAI_dir){
   log_data <- parse_logs(log_file = log_file)
   log_data %>% head
 
-  error_items <- log_data %>%
+  error_comps <- log_data %>%
     dplyr::filter(level == "ERROR")
 
-  error_items
+  error_comps
 }
 
 dont_run <- function(){
@@ -150,30 +152,22 @@ dont_run <- function(){
 
 dont_run <- function(){
 
-
     date_today <- Sys.Date()
-
 
     browser_path <- "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
     browser_path %>% file.exists()
     options(browser = browser_path)
     #source("C:/Users/User11/Desktop/Transfer/TMP/mypkg2/R/sivis.R")
 
-    SteveAI_dir <- "C:/Users/User11/Documents/SteveAI"
+    SteveAI_dir <- "C:/Users/User11/Documents/SteveAI/"
     setwd(SteveAI_dir)
-    load(file.path("~", "scraper_rvest.RData"))
+    load(file.path(SteveAI_dir, "scraper_rvest.RData"))
     source(file.path(SteveAI_dir, "R/log_analysis_func.R"))
 
-    log_file <- glue("~/rvest_single_{date_today}.log")
+    log_file <- glue("{SteveAI_dir}rvest_single_{date_today}.log")
 
     log_data <- parse_logs(log_file = log_file)
     log_data %>% head
-
-    error_items <- log_data %>%
-      dplyr::filter(level == "ERROR") %>%
-      dplyr::select(comp_name) %>%
-      unlist %>%
-      unname
 
     bb <- log_data[which(log_data$comp_name %>% is.na), ]
     log_data$n_nodes
@@ -182,6 +176,10 @@ dont_run <- function(){
       dplyr::group_by(comp_name) %>%
       dplyr::mutate(db_consist = (sum(n_today_jobs, na.rm = TRUE) + sum(n_duplicate_jobs, na.rm = TRUE) == sum(n_nodes, na.rm = TRUE)))
     log_data$db_consist
+
+    error_terms <- c("wrong_xpath", "diff_length_links_id", "wrong_url", "status_404",
+                     "timeout", "no_encod", "func_miss", "curl_error", "connect_reset",
+                     "no_resolve_host")
 
     ui = fluidPage({
 
@@ -224,6 +222,7 @@ dont_run <- function(){
 
             fluidRow(
               column(width = 3,
+                     checkboxGroupInput(inputId = "error_terms", label = "Error terms", choices = error_terms, selected = error_terms),
                      actionButton(inputId = "open_scrape_url", label = "Open current url:"),
                      actionButton(inputId = "google_search", label = "Search for new page at google:"),
                      actionButton(inputId = "remove", label = "Remove this item"),
@@ -253,9 +252,27 @@ dont_run <- function(){
       )
     })
 
+    error_items <- log_data %>%
+      dplyr::filter(level == "ERROR")
+
+    keep <- which((error_items[, error_terms] %>% rowSums()) > 0)
+    error_comps <- error_items[keep, ] %>%
+      dplyr::select(comp_name) %>%
+      unlist %>%
+      unname
+
+
     server = function(input, output) {
 
-      global <- reactiveValues(curl_output = NULL, error_items = error_items, xpath_output = NULL)
+      global <- reactiveValues(curl_output = NULL, error_comps = error_comps, xpath_output = NULL)
+
+      observe({
+        keep <- which((error_items[, input$error_terms] %>% rowSums()) > 0)
+        global$error_comps <- error_items[keep, ] %>%
+          dplyr::select(comp_name) %>%
+          unlist %>%
+          unname
+      })
 
       output$frame <- renderUI({
 
@@ -264,22 +281,22 @@ dont_run <- function(){
       })
 
       output$items <- renderUI({
-        print(length(global$error_items))
+        print(length(global$error_comps))
         selectInput(
           inputId = "error_item",
           label = "Error item:",
-          choices = global$error_items,
-          selected = global$error_items[1]
+          choices = global$error_comps,
+          selected = global$error_comps[1]
         )
       })
 
       observeEvent(input$finish_item, {
         print(input$finish_item)
         print(input$error_item)
-        print(length(unlist(global$error_items)))
+        print(length(unlist(global$error_comps)))
         rvestScraper[[input$error_item]]$no_job_id <- input$no_job_id
-        global$error_items <- setdiff(global$error_items, input$error_item)
-        print(length(unlist(global$error_items)))
+        global$error_comps <- setdiff(global$error_comps, input$error_item)
+        print(length(unlist(global$error_comps)))
       })
 
 
@@ -315,11 +332,22 @@ dont_run <- function(){
         print("doc")
         print(global$doc)
 
-        txt <- SteveAI::getXPathByText(doc = global$doc, text = input$target_text)
-        print(txt)
+        print("zzz")
+        is_json <- global$doc %>% jsonlite::validate()
+
+        if(is_json){
+          warning("document is of type json")
+          shinyalert(text = "document is of type json - changing to '<html>'")
+          global$doc <- "<html>"
+          txt <- "/html"
+        }else{
+          txt <- SteveAI::getXPathByText(doc = global$doc, text = input$target_text)
+        }
+
         output$xpath <- renderUI({
           textInput(inputId = "xpath", label = "xpath:", value = txt %>% toString)
         })
+        print("rr")
 
       })
 
@@ -336,9 +364,6 @@ dont_run <- function(){
 
       })
 
-
-
-
       observeEvent(input$add_new_url, {
         rvestScraper[[input$error_item]]$url <- input$new_url
         save(rvestScraper, file = file.path(SteveAI_dir, "scraper_rvest.RData"))
@@ -354,8 +379,6 @@ dont_run <- function(){
 
       })
 
-
-
       observeEvent(input$domain, {
 
         url <- rvestScraper[[input$error_item]]$url
@@ -365,8 +388,6 @@ dont_run <- function(){
         output$curl <- renderPrint(global$domain_output)
 
       })
-
-
 
       observeEvent(input$remove, {
         print(rvestScraper[[input$error_item]])
@@ -411,7 +432,9 @@ dont_run <- function(){
     shinyApp(ui, server)
 
 }
-
+dont_run()
+# rvestScraper[["CHECK24"]]$jobNameXpath <- "/html/body/div/div/main/section/div/section/div/div/h3/a"
+# save(rvestScraper, file = file.path("~", "scraper_rvest.RData"))
 
 
 # 'NA' does not exist in current working directory
@@ -457,7 +480,7 @@ dont_run <- function(){
 # devtools::install_github(repo = "r-lib/httr")
 # devtools::install_github(repo = "r-lib/xml2")
 
-# but does not always work:
+  # but does not always work:
 # Redirect did not work
 # https://www.nuernberger.de/ueber-uns/karriere/wir-als-arbeitgeber/stellenangebote/
 # -->

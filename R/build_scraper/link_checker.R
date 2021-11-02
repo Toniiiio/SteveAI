@@ -81,7 +81,8 @@ get_doc_phantom <- function(url, ses){
   })
 
 
-  domain <- tryCatch(ses$getUrl(), error = function(e) return("")) %>%
+  url_before <- tryCatch(ses$getUrl(), error = function(e) return(""))
+  domain <- url_before %>%
     urltools::domain()
     # %>%
     # gsub(pattern = "www.", replacement = "")
@@ -92,7 +93,7 @@ get_doc_phantom <- function(url, ses){
   })
 
   return(
-    list(doc = doc, domain = domain, ses = ses)
+    list(doc = doc, domain = domain, ses = ses, url_before = url_before)
   )
 }
 
@@ -175,6 +176,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
     out <- get_doc_phantom(url = link, ses = ses)
     ses <- out$ses
     domain <- out$domain
+    url_before <- out$url_before
     all_docs[[id]] <- out$doc
   }else{
     all_docs[[id]] <- tryCatch(
@@ -231,10 +233,9 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
     html_nodes(xpath = "//iframe") %>%
     html_attr("src")
 
+  # speculative change: dont replace all values
   if(length(iframe_links_raw)){
-    if(is.na(iframe_links_raw)){
-      iframe_links_raw <- character()
-    }
+      iframe_links_raw[is.na(iframe_links_raw)] <- ""
   }
 
   iframe_links <- data.frame(href = iframe_links_raw, text = rep("iframe", length(iframe_links_raw)))
@@ -259,7 +260,9 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   # links$href <- gsub(x = links$href, pattern = "www.www.", replacement = "www.", fixed = TRUE)
 
-  links <- check_for_button(links)
+  # can fail
+
+  links <- check_for_button(links, url_before)
 
   return(
     list(
@@ -271,9 +274,9 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
 }
 
-check_for_button <- function(links){
+check_for_button <- function(links, url_before){
 
-  url_before <- ses$getUrl()
+  # if fail here restart ses and go to url_before
   doc <- ses$findElement(xpath = "/*")
   doc_len_before <- doc$getAttribute("innerHTML") %>% nchar
 
@@ -318,8 +321,6 @@ check_for_button <- function(links){
   }
 
   url_after <- ses$getUrl()
-  print(url_after)
-  print(url_before)
   doc <- ses$findElement(xpath = "/*")
   doc_len_after <- doc$getAttribute("innerHTML") %>% nchar
 
@@ -355,12 +356,16 @@ extract_target_text <- function(parsing_results){
 
 
   #doc %>% SteveAI::showHtmlPage()
+  url <- parsing_results$parsed_links$href[parsing_results$winner]
   xpath <- SteveAI::getXPathByText(text = target_text, doc = doc, add_class = TRUE, exact = TRUE)
   xpath
+  if(is.null(xpath)){
+    message(glue("Did not find an xpath given the target text: {target_text}"))
+    parsing_results$candidate_meta <- url
+    return(parsing_results)
+  }
 
-
-  source("R/configure_xpath.R")
-  url <- parsing_results$parsed_links$href[parsing_results$winner]
+  source("R/scrapers/configure_xpath.R")
   candidate_meta <- configure_xpath(xpath, doc, ses, url)
   parsing_results$candidate_meta <- candidate_meta
   return(parsing_results)
@@ -382,7 +387,7 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
         list(ses = ses, domain = "", doc = "")
       )
     })
-    ses <- out$ses
+    ses <<- out$ses
     domain <- out$domain
     doc <- out$doc
   }else{
@@ -394,6 +399,7 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
 
   #
   # ses$getUrl()
+  doc %>% SteveAI::showHtmlPage()
   tags <- doc %>% html_nodes(xpath = "//*[self::a or self::button or self::input]")
   txt <- tags %>% html_text()
   val <- tags %>% html_attr(name = "value") %>% ifelse(is.na(.), "", .)
@@ -442,6 +448,9 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   link <- url
   link
   link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter)
+  print("ses")
+  print(ses)
+  if(use_phantom & is.null(ses)) stop("Phantom is used, but session is still NULL.")
   link_meta$links %>% head
 
   while(iter_nr < max_iter){

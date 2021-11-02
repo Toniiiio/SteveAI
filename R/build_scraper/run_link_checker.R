@@ -1,16 +1,62 @@
-# library(rvest)
-# library(httr)
-# library(magrittr)
-# library(urltools)
-# source("SteveAI/R/is_job_offer_page.R")
-# source("R/is_job_offer_page.R")
-#
-# source("SteveAI/R/handle_links.R")
-# source("R/handle_links.R")
-#
-# source("SteveAI/R/link_checker.R")
-# source("R/link_checker.R")
-#
+
+dont_run <- function(){
+  library(rvest)
+  library(httr)
+  library(magrittr)
+  library(glue)
+  library(urltools)
+  library(SteveAI)
+  source("SteveAI/R/is_job_offer_page.R")
+  source("R/is_job_offer_page.R")
+
+  source("SteveAI/R/handle_links.R")
+  source("R/handle_links.R")
+
+  source("SteveAI/R/link_checker.R")
+  source("R/build_scraper/link_checker.R")
+  source('R/build_scraper/target_text.R')
+
+  beep <- function(n = 2){
+    for(i in seq(n)){
+      system("rundll32 user32.dll,MessageBeep -1")
+      Sys.sleep(.5)
+    }
+  }
+
+  pjs <<- webdriver::run_phantomjs()
+  ses <<- webdriver::Session$new(port = pjs$port)
+
+  # scrape searcher does not move forward:
+  #rvestScraper$APLANT$domain <- "https://www.sunbeltrentals.co.uk/"
+
+  comp_name <- "DEUTSCHE-BANK"
+  url <- "http://www.commerzbank.de"  #rvestScraper[[comp_name]]$domain
+  url
+  url %>% browseURL()
+  xx <- find_job_page(url, ses = ses)
+  beep()
+
+  winner_url <- xx$parsed_links$href[xx$winner]
+  winner_url
+  "https://careers.deutsche-boerse.com/category/business-analytics-data/6194" %>% ec
+  paste0(winner_url, "#:~:text=", url_encode(xx$candidate_meta[[4]][1])) %>% browseURL()
+  xx$candidate_meta
+  xx$candidate_meta %>% names
+
+  rvestScraper[[comp_name]]$url <- winner_url
+  rvestScraper[[comp_name]]$multi_page <- FALSE
+  rvestScraper[[comp_name]]$jobNameXpath <-  "/html/body/main/div/div/div/div/a/div/div/h5"
+  # save(rvestScraper, file = "data/scraper_rvest.RData")
+
+}
+
+
+save(rvestScraper, file = "scraper_rvest.RData")
+
+#todo:
+# wrong links: IDEALO
+
+
 # # works
 # url <- "http://www.blutspendezentren.de"
 # url <- "https://byterunner.de/"

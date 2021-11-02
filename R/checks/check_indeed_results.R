@@ -7,7 +7,7 @@ dont_run <- function(){
 
   #load(file = "data/job_page_candidates_indeed.RData")
   load("data/wiki_indeed.RData")
-  source("R/configure_xpath.R")
+  source("R/scrapers/configure_xpath.R")
 
   indeed_results2 <- wiki_results2
   nr <- 31

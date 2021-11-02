@@ -29,7 +29,7 @@ extract_target_text <- function(parsing_results){
   xpath
   html_nodes(doc, xpath = xpath)
 
-  source("R/configure_xpath.R")
+  source("R/scrapers/configure_xpath.R")
   url <- parsing_results$parsed_links$href[parsing_results$winner]
   candidate_meta <- configure_xpath(xpath, doc, ses, url)
   candidate_meta$target_text = target_text
