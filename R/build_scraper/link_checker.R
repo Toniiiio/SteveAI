@@ -280,18 +280,25 @@ check_for_button <- function(links, url_before, ses, pjs){
   doc <- ses$findElement(xpath = "/*")
   doc_len_before <- doc$getAttribute("innerHTML") %>% nchar
 
+  cookie_xp <- "//button[contains(text(), 'Zustimmen')]"
+  buttons <- ses$findElements(xpath = cookie_xp)
+  if(length(buttons)){
+    for(nr in seq(buttons)){
+      tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
+    }
+  }
+
   xp <- generate_button_xpath()
   buttons <- ses$findElements(xpath = xp)
   for(nr in seq(buttons)){
     tryCatch(buttons[[nr]]$click(), error = function(e) message(e))
   }
 
-  input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or contains(@value, 'Search') or @title = 'Search Jobs' or @value='Suche starten']"
+  input_xpath <- "//input[@title = 'Stellen suchen' or @type = 'submit' or @value = 'Search Jobs' or contains(@value, 'Search') or @title = 'Search Jobs' or @value='Suche starten']"
   inputs <- ses$findElements(xpath = input_xpath)
-  xx
 
   job_related_page_xp <- "//*[contains(text(), 'Zurücksetzen') or contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search') or contains(text(), 'Search Current Openings')  or contains(text(), 'Careers')]"
-  is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
+  is_job_related <- length(ses$findElements(xpath = job_related_page_xp))
   is_job_related
 
 
@@ -306,7 +313,7 @@ check_for_button <- function(links, url_before, ses, pjs){
     }
   }
 
-  if(is_job_related){
+  if(length(inputs)){
     for(nr in seq(inputs)){
       message("Found and trying a relevant input")
       tryCatch(inputs[[nr]]$click(), error = function(e) message(e))
@@ -400,7 +407,7 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, pjs, li
 
   #
   # ses$getUrl()
-  doc %>% SteveAI::showHtmlPage()
+  #doc %>% SteveAI::showHtmlPage()
   tags <- doc %>% html_nodes(xpath = "//*[self::a or self::button or self::input]")
   txt <- tags %>% html_text()
   val <- tags %>% html_attr(name = "value") %>% ifelse(is.na(.), "", .)
@@ -434,8 +441,8 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, pjs, li
 
 # remDr = NULL
 # # ses <<- start_phantom()
-# use_selenium = FALSE
-# use_phantom = TRUE
+use_selenium = FALSE
+use_phantom = TRUE
 find_job_page <- function(url, remDr = NULL, ses = NULL, pjs = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
   iter_nr <- 0
@@ -449,8 +456,6 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, pjs = NULL, use_seleniu
   link <- url
   link
   link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, pjs, link, parsed_links, max_iter)
-  print("ses")
-  print(ses)
   if(use_phantom & is.null(ses)) stop("Phantom is used, but session is still NULL.")
   link_meta$links %>% head
 

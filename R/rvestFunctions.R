@@ -324,9 +324,14 @@ subsetByStr3 <- function(lstRaw, arr){
   lst
 }
 
-showHtmlPage <- function(doc){
+showHtmlPage <- function(doc, browser = rstudioapi::viewer){
   tmp <- tempfile(fileext = ".html")
   doc %>% toString %>% writeLines(con = tmp)
-  tmp %>% browseURL(browser = rstudioapi::viewer)
+  if(browser == "browser"){
+    browser <- getOption("browser")
+    # not sure why i need the a=1 appendix, really weird
+    tmp %<>% paste0("file://", ., "?a=1")
+  }
+  tmp %>% browseURL()
 }
 
