@@ -70,7 +70,7 @@ get_doc_selenium <- function(url, remDr){
   )
 }
 
-get_doc_phantom <- function(url, ses){
+get_doc_phantom <- function(url, ses, pjs){
 
   url <- as.character(url)
   tryCatch(ses$go(url), error = function(e){
@@ -93,7 +93,7 @@ get_doc_phantom <- function(url, ses){
   })
 
   return(
-    list(doc = doc, domain = domain, ses = ses, url_before = url_before)
+    list(doc = doc, domain = domain, ses = ses, pjs = pjs, url_before = url_before)
   )
 }
 
@@ -146,7 +146,7 @@ generate_button_xpath <- function(){
   paste0("//*", "[", tagnames, " and (", xp_text, ")]")
 }
 
-parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, use_phantom = TRUE, ses = NULL, remDr = NULL){
+parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, use_phantom = TRUE, ses = NULL, pjs, remDr = NULL){
 
   links <- link_meta$links
   all_docs <- link_meta$all_docs
@@ -173,7 +173,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
     all_docs[[id]] <- out$doc
     domain <- out$domain
   }else if(use_phantom){
-    out <- get_doc_phantom(url = link, ses = ses)
+    out <- get_doc_phantom(url = link, ses = ses, pjs = pjs)
     ses <- out$ses
     domain <- out$domain
     url_before <- out$url_before
@@ -262,7 +262,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
   # can fail
 
-  links <- check_for_button(links, url_before)
+  links <- check_for_button(links, url_before, ses, pjs)
 
   return(
     list(
@@ -274,7 +274,7 @@ parse_link <- function(target_link, iter_nr, link_meta, use_selenium = FALSE, us
 
 }
 
-check_for_button <- function(links, url_before){
+check_for_button <- function(links, url_before, ses, pjs){
 
   # if fail here restart ses and go to url_before
   doc <- ses$findElement(xpath = "/*")
@@ -288,8 +288,9 @@ check_for_button <- function(links, url_before){
 
   input_xpath <- "//input[@type = 'submit' or @value = 'Search Jobs' or contains(@value, 'Search') or @title = 'Search Jobs' or @value='Suche starten']"
   inputs <- ses$findElements(xpath = input_xpath)
+  xx
 
-  job_related_page_xp <- "//*[contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search') or contains(text(), 'Search Current Openings')  or contains(text(), 'Careers')]"
+  job_related_page_xp <- "//*[contains(text(), 'Zurücksetzen') or contains(text(), 'Find a job') or contains(text(), 'Search and apply') or contains(text(), 'Global Career Opportunities') or contains(text(), 'Search Jobs') or contains(text(), 'Search for jobs') or contains(text(), 'Find Jobs')  or contains(text(), 'Aktuelle Stellenangebote') or contains(text(), 'gewünschte Stelle')  or contains(text(), 'job search') or contains(text(), 'Search Current Openings')  or contains(text(), 'Careers')]"
   is_job_related <- ses$findElements(xpath = job_related_page_xp) %>% length
   is_job_related
 
@@ -373,14 +374,14 @@ extract_target_text <- function(parsing_results){
 }
 
 
-create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter) {
+create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, pjs, link, parsed_links, max_iter) {
 
   if(use_selenium){
     out <- get_doc_selenium(url, remDr)
     doc <- out$doc
     domain <- out$domain
   }else if(use_phantom){
-    out <- tryCatch(get_doc_phantom(url, ses), error = function(e){
+    out <- tryCatch(get_doc_phantom(url, ses, pjs), error = function(e){
       warning(e)
       # ses <<- webdriver::Session$new(port = pjs$port)
       return(
@@ -435,7 +436,7 @@ create_link_meta <- function(use_selenium, url, remDr, use_phantom, ses, link, p
 # # ses <<- start_phantom()
 # use_selenium = FALSE
 # use_phantom = TRUE
-find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, use_phantom = TRUE){
+find_job_page <- function(url, remDr = NULL, ses = NULL, pjs = NULL, use_selenium = FALSE, use_phantom = TRUE){
 
   iter_nr <- 0
   max_iter <- 12
@@ -447,7 +448,7 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
   #links[1] %>% browseURL()
   link <- url
   link
-  link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, link, parsed_links, max_iter)
+  link_meta <- create_link_meta(use_selenium, url, remDr, use_phantom, ses, pjs, link, parsed_links, max_iter)
   print("ses")
   print(ses)
   if(use_phantom & is.null(ses)) stop("Phantom is used, but session is still NULL.")
@@ -467,7 +468,7 @@ find_job_page <- function(url, remDr = NULL, ses = NULL, use_selenium = FALSE, u
       target_link = target_link,
       iter_nr = iter_nr, link_meta = link_meta,
       use_selenium = FALSE, use_phantom = TRUE,
-      remDr = NULL, ses = ses
+      remDr = NULL, ses = ses, pjs = pjs
     )
 
     link_meta$links %>% head

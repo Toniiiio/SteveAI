@@ -30,18 +30,23 @@ dont_run <- function(){
   #rvestScraper$APLANT$domain <- "https://www.sunbeltrentals.co.uk/"
 
   comp_name <- "DEUTSCHE-BANK"
-  url <- "http://www.commerzbank.de"  #rvestScraper[[comp_name]]$domain
+  url <- "http://www.lidl.de"  #rvestScraper[[comp_name]]$domain
   url
   url %>% browseURL()
-  xx <- find_job_page(url, ses = ses)
+  xx <- find_job_page(url, ses = ses, pjs = pjs)
   beep()
 
+
+  xx$matches
+  xx$all_docs[[9]] %>% showHtmlPage()
   winner_url <- xx$parsed_links$href[xx$winner]
   winner_url
-  "https://careers.deutsche-boerse.com/category/business-analytics-data/6194" %>% ec
+  winner_url %>% ec
   paste0(winner_url, "#:~:text=", url_encode(xx$candidate_meta[[4]][1])) %>% browseURL()
   xx$candidate_meta
   xx$candidate_meta %>% names
+
+  xx$parsed_links$href
 
   rvestScraper[[comp_name]]$url <- winner_url
   rvestScraper[[comp_name]]$multi_page <- FALSE
