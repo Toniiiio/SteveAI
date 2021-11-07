@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-
-=======
->>>>>>> e3a4bcc81202e00e7be934dd306712705f20301b
 ### Quality checks
 #### job name 
 
@@ -27,10 +21,3 @@ Sometimes jobs are posted with multiple locations in one post (CIO for HH, Munic
 ### Error types
 
 Error in curl::curl_fetch_memory(url, handle = handle): schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) - Der Zielprinzipalname ist falsch.
-<<<<<<< HEAD
-=======
-=======
-
->>>>>>> e3a4bcc81202e00e7be934dd306712705f20301b
-# SteveAI
->>>>>>> f50297823b41d6577515865bc86939bf8ecf5041
